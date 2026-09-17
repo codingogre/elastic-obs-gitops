@@ -121,10 +121,13 @@ jobs:
             echo "Checks on this pull request plan prod and re-run the gate. Merging starts apply-prod, which waits for an approver."
           } > "$RUNNER_TEMP/body.md"
 
-          if gh pr view "$branch" --json number >/dev/null 2>&1; then
-            gh pr edit "$branch" --body-file "$RUNNER_TEMP/body.md"
+          # Only an open pull request counts: `gh pr view <branch>` also finds merged and closed ones, and a demo
+          # reset can promote a release that was promoted before.
+          url=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url // empty')
+          if [ -n "$url" ]; then
+            gh pr edit "$url" --body-file "$RUNNER_TEMP/body.md"
           else
-            gh pr create --base main --head "$branch" --title "Promote bundle ${tag} → prod" \
-              --label promotion --body-file "$RUNNER_TEMP/body.md"
+            url=$(gh pr create --base main --head "$branch" --title "Promote bundle ${tag} → prod" \
+              --label promotion --body-file "$RUNNER_TEMP/body.md")
           fi
-          gh pr view "$branch" --json url --jq .url | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "$url" | tee -a "$GITHUB_STEP_SUMMARY"

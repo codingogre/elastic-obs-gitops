@@ -49,10 +49,13 @@ jobs:
           git add "modules/bundle/catalog/services/$name.yaml"
           git commit -m "Onboard service: $name" -m "From issue #$ISSUE."
           git push --force origin "$branch"
-          if ! gh pr view "$branch" --json number >/dev/null 2>&1; then
-            gh pr create --base main --head "$branch" --title "Onboard service: $name" --label onboard-service \
+          # Only an open pull request counts: `gh pr view <branch>` also finds merged and closed ones, so a service
+          # onboarded again after a demo reset would get no pull request.
+          url=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url // empty')
+          if [ -z "$url" ]; then
+            url=$(gh pr create --base main --head "$branch" --title "Onboard service: $name" --label onboard-service \
               --body "Adds \`$name\` to the service catalog. The golden path gives it a dashboard, SLOs, alerting, response routing and a release gate in dev when this merges, and in prod on the next promotion.
 
-          Closes #$ISSUE"
+          Closes #$ISSUE")
           fi
-          gh issue comment "$ISSUE" --body "Opened pull request for \`$name\`: $(gh pr view "$branch" --json url --jq .url)"
+          gh issue comment "$ISSUE" --body "Opened pull request for \`$name\`: $url"

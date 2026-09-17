@@ -9,6 +9,7 @@ TF   = terraform -chdir=envs/$(ENV)
 help:
 	@echo "make init|plan ENV=dev|prod   make apply ENV=dev   make fmt   make validate"
 	@echo "make platform-init|platform-plan"
+	@echo "make demo-act1|demo-act2|demo-act3 [PAUSE=1] [STEP=<beat>] [DRY_RUN=1]   make demo-reset [DRY_RUN=1]"
 
 init:
 	$(PY) scripts/with_env.py $(ENV) --backend -- $(TF) init -input=false
@@ -69,6 +70,30 @@ capture:
 
 demo-preflight:
 	$(RUN) python3 scripts/preflight_connectors.py --env $(ENV)
+
+# ── Live acts and reset (drivers load both environments' credentials themselves; they print every link) ──
+# PAUSE=1 waits for Enter between beats, STEP=<beat> runs one beat, SKIP=a,b leaves beats out, DRY_RUN=1 changes nothing.
+PAUSE ?=
+STEP ?=
+SKIP ?=
+DRY_RUN ?=
+DEMO_FLAGS = $(if $(filter-out 0,$(PAUSE)),--pause) $(if $(STEP),--step $(STEP)) $(if $(SKIP),--skip $(SKIP)) \
+  $(if $(filter-out 0,$(DRY_RUN)),--dry-run)
+RELEASE_FLAGS = $(if $(filter-out 0,$(DEGRADE_AFTER)),--degrade-after $(DEGRADE_AFTER))
+
+.PHONY: demo-act1 demo-act2 demo-act3 demo-reset
+
+demo-act1:
+	$(PY) scripts/demo_act1.py $(DEMO_FLAGS)
+
+demo-act2:
+	$(PY) scripts/demo_act2.py $(DEMO_FLAGS) $(RELEASE_FLAGS)
+
+demo-act3:
+	$(PY) scripts/demo_act3.py $(DEMO_FLAGS) $(RELEASE_FLAGS)
+
+demo-reset:
+	$(PY) scripts/demo_reset.py $(DEMO_FLAGS)
 
 # ── elasticgitops provider, built from source into a filesystem mirror (DECISIONS ADR-002) ──
 PROVIDER_SRC ?= ../terraform-provider-elasticgitops
