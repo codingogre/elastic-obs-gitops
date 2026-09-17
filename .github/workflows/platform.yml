@@ -1,0 +1,43 @@
+name: platform
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - platform/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: tf-platform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: platform
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+      TF_STATE_REGION: ${{ secrets.TF_STATE_REGION }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      EC_API_KEY: ${{ secrets.EC_API_KEY }}
+      TF_VAR_prod_project_id: ${{ secrets.PROD_PROJECT_ID }}
+      TF_VAR_dev_kibana_endpoint: ${{ secrets.DEV_KIBANA_ENDPOINT }}
+      TF_VAR_dev_kibana_api_key: ${{ secrets.DEV_KIBANA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/tf-env
+      - name: init
+        run: python3 scripts/with_env.py platform --backend -- terraform -chdir=platform init -input=false
+      - name: plan
+        run: |
+          python3 scripts/with_env.py platform -- terraform -chdir=platform plan -input=false -out=tfplan
+          terraform -chdir=platform show -json tfplan > "$RUNNER_TEMP/plan.json"
+          python3 scripts/plan_summary.py "$RUNNER_TEMP/plan.json" --title "Platform apply" >> "$GITHUB_STEP_SUMMARY"
+          rm -f "$RUNNER_TEMP/plan.json"
+      - name: apply
+        run: python3 scripts/with_env.py platform -- terraform -chdir=platform apply -input=false tfplan

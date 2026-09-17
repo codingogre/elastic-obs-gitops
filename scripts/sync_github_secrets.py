@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""Copy local credentials into GitHub Actions secrets without printing them.
+
+Usage: sync_github_secrets.py [--dry-run]
+
+Reads .env.dev, .env.prod, .env.tools and .env.state from GITOPS_ENV_DIR (default: the repo's parent
+directory) and sets environment secrets (dev, prod, platform) and repository secrets with `gh secret set`,
+passing each value on stdin. Empty values are skipped and listed.
+"""
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from with_env import ENV_DIR, read_env_file  # noqa: E402
+
+ELASTIC = ["ELASTICSEARCH_ENDPOINTS", "ELASTICSEARCH_API_KEY", "KIBANA_ENDPOINT", "KIBANA_API_KEY",
+           "KIBANA_SPACE", "OTLP_ENDPOINT"]
+TOOLS = ["TEAMS_WEBHOOK_URL", "SN_URL", "SN_USER", "SN_PASSWORD", "PD_ROUTING_KEY"]
+REPO_SECRETS = ["TF_STATE_BUCKET", "TF_STATE_REGION", "AWS_ROLE_ARN", "GH_DISPATCH_TOKEN"]
+
+
+def put(name, value, env=None, dry_run=False):
+    target = f"env {env}" if env else "repo"
+    if not value:
+        print(f"skip  {target:>12}  {name} (empty)")
+        return
+    if not dry_run:
+        cmd = ["gh", "secret", "set", name] + (["--env", env] if env else [])
+        subprocess.run(cmd, input=value, text=True, check=True, capture_output=True)
+    print(f"set   {target:>12}  {name}")
+
+
+def main():
+    dry_run = "--dry-run" in sys.argv
+    tools = read_env_file(ENV_DIR / ".env.tools")
+    state = read_env_file(ENV_DIR / ".env.state")
+    dev = read_env_file(ENV_DIR / ".env.dev")
+    prod = read_env_file(ENV_DIR / ".env.prod")
+
+    for env_name, values in (("dev", dev), ("prod", prod)):
+        merged = {**tools, **values}
+        for name in ELASTIC + TOOLS:
+            put(name, merged.get(name, ""), env_name, dry_run)
+
+    put("EC_API_KEY", prod.get("EC_CLOUD_API_KEY", ""), "platform", dry_run)
+    put("PROD_PROJECT_ID", prod.get("PROJECT_ID", ""), "platform", dry_run)
+    put("DEV_KIBANA_ENDPOINT", dev.get("KIBANA_ENDPOINT", ""), "platform", dry_run)
+    put("DEV_KIBANA_API_KEY", dev.get("KIBANA_API_KEY", ""), "platform", dry_run)
+
+    merged = {**state, **tools}
+    for name in REPO_SECRETS:
+        put(name, merged.get(name, ""), None, dry_run)
+
+
+if __name__ == "__main__":
+    main()

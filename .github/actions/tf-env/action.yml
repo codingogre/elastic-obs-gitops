@@ -1,0 +1,62 @@
+name: tf-env
+description: Terraform, Python and state access for one environment, plus the elasticgitops provider built from source.
+inputs:
+  build-provider:
+    description: Build codingogre/elasticgitops from source into a filesystem mirror.
+    default: "false"
+  provider-ref:
+    description: Git ref of codingogre/terraform-provider-elasticgitops to build.
+    default: main
+  provider-version:
+    description: Version the mirror advertises; must match versions.tf.
+    default: 0.1.0
+runs:
+  using: composite
+  steps:
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.15.6
+        terraform_wrapper: false
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: State access (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_ARN }}
+        aws-region: ${{ env.TF_STATE_REGION }}
+
+    - name: Check out the elasticgitops provider
+      if: inputs.build-provider == 'true'
+      uses: actions/checkout@v4
+      with:
+        repository: codingogre/terraform-provider-elasticgitops
+        ref: ${{ inputs.provider-ref }}
+        path: .provider-src
+
+    - if: inputs.build-provider == 'true'
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: .provider-src/go.mod
+        cache-dependency-path: .provider-src/go.sum
+
+    - name: Build the provider into a filesystem mirror
+      if: inputs.build-provider == 'true'
+      shell: bash
+      run: |
+        mirror="$RUNNER_TEMP/provider-mirror"
+        (cd .provider-src && ./scripts/build-mirror.sh "$mirror" "${{ inputs.provider-version }}" linux amd64)
+        cat > "$RUNNER_TEMP/terraformrc" <<RC
+        provider_installation {
+          filesystem_mirror {
+            path    = "$mirror"
+            include = ["registry.terraform.io/codingogre/elasticgitops"]
+          }
+          direct {
+            exclude = ["registry.terraform.io/codingogre/elasticgitops"]
+          }
+        }
+        RC
+        echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/terraformrc" >> "$GITHUB_ENV"

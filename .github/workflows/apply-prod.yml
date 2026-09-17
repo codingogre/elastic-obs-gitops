@@ -1,0 +1,59 @@
+name: apply-prod
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - envs/prod/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: tf-prod
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+  TF_STATE_REGION: ${{ secrets.TF_STATE_REGION }}
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    # The prod environment requires an approver and deploys only from main.
+    environment: prod
+    env:
+      ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
+      ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
+      KIBANA_ENDPOINT: ${{ secrets.KIBANA_ENDPOINT }}
+      KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      SN_URL: ${{ secrets.SN_URL }}
+      SN_USER: ${{ secrets.SN_USER }}
+      SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
+      PD_ROUTING_KEY: ${{ secrets.PD_ROUTING_KEY }}
+      GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/tf-env
+      - name: init
+        run: python3 scripts/with_env.py prod --backend -- terraform -chdir=envs/prod init -input=false
+      - name: plan
+        run: |
+          echo "STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" >> "$GITHUB_ENV"
+          python3 scripts/with_env.py prod -- terraform -chdir=envs/prod plan -input=false -out=tfplan
+          terraform -chdir=envs/prod show -json tfplan > "$RUNNER_TEMP/plan.json"
+          python3 scripts/plan_summary.py "$RUNNER_TEMP/plan.json" --title "Prod apply" >> "$GITHUB_STEP_SUMMARY"
+          rm -f "$RUNNER_TEMP/plan.json"
+      - name: apply
+        run: python3 scripts/with_env.py prod -- terraform -chdir=envs/prod apply -input=false tfplan
+      - name: promotion event
+        if: always()
+        run: |
+          version=$(grep -oE 'ref=obs-v[0-9]+\.[0-9]+\.[0-9]+' envs/prod/main.tf | cut -d= -f2 || true)
+          outcome=${{ job.status == 'success' && 'success' || 'failure' }}
+          python3 scripts/emit_event.py --action promotion --env prod --outcome "$outcome" --started-at "$STARTED_AT" --bundle-version "${version:-local}" || true

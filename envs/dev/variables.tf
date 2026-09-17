@@ -1,0 +1,80 @@
+variable "elasticsearch_endpoint" {
+  type      = string
+  sensitive = true
+}
+
+variable "elasticsearch_api_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "kibana_endpoint" {
+  type      = string
+  sensitive = true
+}
+
+variable "kibana_api_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "space_id" {
+  type = string
+}
+
+variable "settings" {
+  type = object({
+    environment                 = string
+    alerting_v2_enabled         = bool
+    manage_global_settings      = bool
+    dashboards_write_restricted = bool
+    drift_policy                = string
+    gitops_events_retention     = string
+    gate_soak_seconds           = number
+  })
+}
+
+variable "github_repository" {
+  type = string
+}
+
+variable "secrets_version" {
+  type    = string
+  default = "1"
+}
+
+variable "teams_webhook_url" {
+  type      = string
+  sensitive = true
+  default   = null
+}
+
+variable "sn_url" {
+  type      = string
+  sensitive = true
+  default   = null
+}
+
+variable "sn_user" {
+  type      = string
+  sensitive = true
+  default   = null
+}
+
+variable "sn_password" {
+  type      = string
+  sensitive = true
+  default   = null
+}
+
+variable "pd_routing_key" {
+  type      = string
+  sensitive = true
+  default   = null
+}
+
+variable "github_dispatch_token" {
+  type      = string
+  sensitive = true
+  default   = null
+}

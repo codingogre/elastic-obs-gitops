@@ -1,0 +1,71 @@
+name: apply-dev
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - modules/**
+      - envs/dev/**
+      - .github/workflows/apply-dev.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: tf-dev
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+  TF_STATE_REGION: ${{ secrets.TF_STATE_REGION }}
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
+      ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
+      KIBANA_ENDPOINT: ${{ secrets.KIBANA_ENDPOINT }}
+      KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      SN_URL: ${{ secrets.SN_URL }}
+      SN_USER: ${{ secrets.SN_USER }}
+      SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
+      PD_ROUTING_KEY: ${{ secrets.PD_ROUTING_KEY }}
+      GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/tf-env
+      - name: init
+        run: python3 scripts/with_env.py dev --backend -- terraform -chdir=envs/dev init -input=false
+      - name: plan
+        run: |
+          echo "STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" >> "$GITHUB_ENV"
+          python3 scripts/with_env.py dev -- terraform -chdir=envs/dev plan -input=false -out=tfplan
+          terraform -chdir=envs/dev show -json tfplan > "$RUNNER_TEMP/plan.json"
+          python3 scripts/plan_summary.py "$RUNNER_TEMP/plan.json" --title "Dev apply" >> "$GITHUB_STEP_SUMMARY"
+          rm -f "$RUNNER_TEMP/plan.json"
+      - name: apply
+        run: python3 scripts/with_env.py dev -- terraform -chdir=envs/dev apply -input=false tfplan
+      - name: tag the bundle release
+        id: tag
+        run: |
+          tag="obs-v0.${{ github.run_number }}.0"
+          git tag "$tag" "$GITHUB_SHA"
+          git push origin "$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: events
+        if: always()
+        run: |
+          outcome=${{ job.status == 'success' && 'success' || 'failure' }}
+          python3 scripts/emit_event.py --action apply --env dev --outcome "$outcome" --started-at "$STARTED_AT" --bundle-version "${{ steps.tag.outputs.tag }}" || true
+          if [ -n "${{ steps.tag.outputs.tag }}" ]; then
+            python3 scripts/emit_event.py --action tag --env dev --bundle-version "${{ steps.tag.outputs.tag }}" || true
+          fi

@@ -4,7 +4,7 @@
 Usage: with_env.py <dev|prod|platform> [--backend] -- <command> [args...]
 
 Locally, KEY=VALUE files are read from the directory named by GITOPS_ENV_DIR (default: the repo's
-parent directory): .env.<env> and .env.state. In CI the variables already come from GitHub
+parent directory): .env.<env>, .env.tools (response-tool credentials) and .env.state. In CI the variables already come from GitHub
 Environment secrets, so missing files are fine. Values are never printed.
 
 Well-known names are mapped to Terraform input variables (TF_VAR_*) unless already set. With
@@ -72,13 +72,13 @@ def main():
             if dev.get(key):
                 env.setdefault(f"TF_VAR_{var}", dev[key])
     else:
-        for key, value in read_env_file(ENV_DIR / f".env.{env_name}").items():
-            env.setdefault(key, value)
+        # Response-tool credentials (.env.tools) are shared by both environments.
+        for name in (f".env.{env_name}", ".env.tools"):
+            for key, value in read_env_file(ENV_DIR / name).items():
+                env.setdefault(key, value)
         for key, var in TF_VARS.items():
             if env.get(key):
                 env.setdefault(f"TF_VAR_{var}", env[key])
-        if env.get("KIBANA_SPACE"):
-            env.setdefault("TF_VAR_space_id", env["KIBANA_SPACE"])
 
     if "--backend" in flags:
         bucket, region = env.get("TF_STATE_BUCKET"), env.get("TF_STATE_REGION")
