@@ -1,0 +1,2 @@
+FROM gitops-probe-tf-core-events
+| STATS events = COUNT(*)

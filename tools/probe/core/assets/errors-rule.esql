@@ -1,0 +1,4 @@
+FROM gitops-probe-tf-core-events
+| WHERE event.kind == "error"
+| STATS errors = COUNT(*) BY service.name
+| WHERE errors > 0

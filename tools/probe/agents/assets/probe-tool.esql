@@ -1,0 +1,4 @@
+FROM traces-*
+| WHERE @timestamp >= NOW() - 1 hour AND service.name == ?service
+| STATS spans = COUNT(*)
+| LIMIT 1

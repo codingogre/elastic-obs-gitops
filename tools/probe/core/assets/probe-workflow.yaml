@@ -1,0 +1,10 @@
+name: gitops-probe-tf-core-workflow
+description: Phase 0 probe target for a classic rule system action. Logs only.
+enabled: true
+triggers:
+  - type: alert
+steps:
+  - name: log_alert
+    type: console
+    with:
+      message: "probe rule {{ event.rule.name }} sent {{ event.alerts | size }} alerts"

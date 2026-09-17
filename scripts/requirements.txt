@@ -1,0 +1,8 @@
+# Python dependencies for scripts/ (traffic generator, capture, drift, gate, review).
+#   python3.12 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
+# OpenTelemetry is pinned exactly: traffic.py uses the logs SDK (opentelemetry._logs), which is still
+# underscore-prefixed and changes between releases.
+opentelemetry-sdk==1.44.0
+opentelemetry-exporter-otlp-proto-http==1.44.0
+requests==2.34.2
+pyyaml==6.0.3

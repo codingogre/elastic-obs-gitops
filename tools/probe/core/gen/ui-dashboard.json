@@ -1,0 +1,87 @@
+{
+ "title": "gitops-probe-tf-core UI stand-in dashboard",
+ "description": "Stand-in for a dashboard made in the UI (Phase 0 capture probe).",
+ "time_range": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "panels": [
+  {
+   "type": "markdown",
+   "id": "notes",
+   "grid": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "config": {
+    "content": "## Grid dispatch\nCaptured from the UI."
+   }
+  },
+  {
+   "type": "vis",
+   "id": "request-count",
+   "grid": {
+    "x": 12,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "config": {
+    "type": "metric",
+    "title": "Requests",
+    "data_source": {
+     "type": "esql",
+     "query": "FROM traces-* | WHERE service.name == \"grid-dispatch\" AND kind == \"Server\" | STATS requests = COUNT(*)"
+    },
+    "metrics": [
+     {
+      "type": "primary",
+      "column": "requests"
+     }
+    ]
+   }
+  },
+  {
+   "type": "vis",
+   "id": "requests-over-time",
+   "grid": {
+    "x": 24,
+    "y": 0,
+    "w": 24,
+    "h": 8
+   },
+   "config": {
+    "type": "xy",
+    "title": "Requests over time",
+    "axis": {
+     "x": {
+      "scale": "temporal",
+      "domain": {
+       "type": "fit",
+       "rounding": false
+      }
+     }
+    },
+    "layers": [
+     {
+      "type": "line",
+      "data_source": {
+       "type": "esql",
+       "query": "FROM traces-* | WHERE @timestamp <= ?_tend AND @timestamp > ?_tstart AND service.name == \"grid-dispatch\" AND kind == \"Server\" | STATS requests = COUNT(*) BY bucket = BUCKET(@timestamp, 75, ?_tstart, ?_tend)"
+      },
+      "x": {
+       "column": "bucket"
+      },
+      "y": [
+       {
+        "column": "requests"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

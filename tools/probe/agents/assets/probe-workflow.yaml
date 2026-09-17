@@ -1,0 +1,20 @@
+# Probe workflow: one manual input and one console step. No side effects.
+name: gitops-probe-tf-workflow
+description: Phase 0 probe workflow managed by Terraform.
+enabled: true
+tags:
+  - gitops-probe-tf
+triggers:
+  - type: manual
+    inputs:
+      type: object
+      properties:
+        service:
+          type: string
+          description: Service name to echo
+          default: "grid-dispatch"
+steps:
+  - name: echo_service
+    type: console
+    with:
+      message: "gitops-probe-tf workflow v2 ran for {{ inputs.service }}"
