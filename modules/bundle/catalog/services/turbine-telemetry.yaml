@@ -1,0 +1,15 @@
+name: turbine-telemetry
+description: Ingests and serves health telemetry from turbine fleets
+team: fleet-analytics
+tier: 1
+contact:
+  email: fleet-analytics-oncall@example.com
+runbook_url: https://example.com/runbooks/turbine-telemetry
+slo:
+  availability_target: 99.5
+  latency_threshold_ms: 300
+  latency_target: 95
+  window: 7d
+release:
+  max_error_ratio: 0.02
+  max_p95_ms: 350

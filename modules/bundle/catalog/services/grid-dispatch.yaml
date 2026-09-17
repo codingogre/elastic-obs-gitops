@@ -1,0 +1,15 @@
+name: grid-dispatch
+description: Dispatches generation and load-balancing instructions across the grid
+team: grid-operations
+tier: 1
+contact:
+  email: grid-ops-oncall@example.com
+runbook_url: https://example.com/runbooks/grid-dispatch
+slo:
+  availability_target: 99.5
+  latency_threshold_ms: 400
+  latency_target: 95
+  window: 7d
+release:
+  max_error_ratio: 0.02
+  max_p95_ms: 400

@@ -1,0 +1,88 @@
+name: Onboard a service
+description: Give a service a dashboard, SLOs, alerting, response routing and a release gate.
+title: "Onboard service: "
+labels: [onboard-service]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Filing this issue opens a pull request that adds your service to the catalog. The platform
+        pipeline plans it, an AI reviewer checks the targets against real data, and merging applies it to dev.
+  - type: input
+    id: name
+    attributes:
+      label: Service name
+      description: Must match service.name in your telemetry. Lowercase letters, digits and hyphens.
+      placeholder: field-service
+    validations:
+      required: true
+  - type: input
+    id: description
+    attributes:
+      label: Description
+      placeholder: Schedules and tracks field work orders
+    validations:
+      required: true
+  - type: input
+    id: team
+    attributes:
+      label: Owning team
+      placeholder: field-operations
+    validations:
+      required: true
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Tier
+      description: Tier 1 needs a runbook and pages on-call.
+      options: ["1", "2", "3"]
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: On-call contact email
+      placeholder: field-ops-oncall@example.com
+    validations:
+      required: true
+  - type: input
+    id: runbook_url
+    attributes:
+      label: Runbook URL
+      placeholder: https://example.com/runbooks/field-service
+  - type: input
+    id: availability_target
+    attributes:
+      label: Availability SLO target (%)
+      placeholder: "99.5"
+    validations:
+      required: true
+  - type: input
+    id: latency_threshold_ms
+    attributes:
+      label: Latency threshold (ms)
+      description: A request slower than this counts against the latency SLO.
+      placeholder: "500"
+    validations:
+      required: true
+  - type: input
+    id: latency_target
+    attributes:
+      label: Latency SLO target (% of requests under the threshold)
+      placeholder: "95"
+    validations:
+      required: true
+  - type: input
+    id: max_error_ratio
+    attributes:
+      label: Release gate, maximum error ratio
+      placeholder: "0.02"
+    validations:
+      required: true
+  - type: input
+    id: max_p95_ms
+    attributes:
+      label: Release gate, maximum p95 latency (ms)
+      placeholder: "650"
+    validations:
+      required: true
