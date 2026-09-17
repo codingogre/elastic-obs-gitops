@@ -12,7 +12,7 @@ depends on a server-generated ID. Environment differences live only in `envs/<en
 | Workflows | `modules/bundle/workflows` | YAML in `*.yaml` files |
 | Agents, skills, tools | `modules/bundle/agents` | Skills in `skills/*.md`, ES\|QL in `tools/*.esql` |
 | Alerting v2 routing | `modules/bundle/alerting_v2` | `elasticgitops` resources, behind `settings.alerting_v2_enabled` |
-| Captured UI objects | `modules/bundle/bespoke` | Written by the capture flow |
+| Captured UI objects | `modules/bundle/bespoke` | Written by the capture flow (`dashboards/<slug>.json`, `workflows/<id>.yaml`) |
 
 ## IDs
 
@@ -36,7 +36,8 @@ depends on a server-generated ID. Environment differences live only in `envs/<en
 | Agent: SRE triage | `gitops-sre-remediator` | SRE remediator |
 | Skill: review checklist | `gitops-observability-review` | |
 | Skill: release risk | `gitops-release-risk-assessment` | |
-| Tools (shared) | `gitops-field-exists`, `gitops-rule-backtest`, `gitops-slo-feasibility`, `gitops-recent-deploys`, `gitops-error-ratio-by-version` | |
+| Tools (shared) | `gitops-rule-backtest`, `gitops-slo-feasibility`, `gitops-recent-deploys`, `gitops-error-ratio-by-version` | Field checks use the built-in read-only tools |
+| Tool (workflow) | `gitops-sync-to-git-tool` | Only where `settings.drift_policy = "capture"` (dev) |
 | Tool (per service) | `gitops-svc-<svc>-health` | |
 | Dashboard (per service) | `svc-<svc>-golden-signals` | `<Title> golden signals` |
 | SLOs (per service) | `svc-<svc>-availability`, `svc-<svc>-latency` | |
@@ -47,7 +48,8 @@ depends on a server-generated ID. Environment differences live only in `envs/<en
 
 ## Tags and labels
 
-- Every Kibana object carries the tag `gitops` and, where it belongs to a service, `service:<svc>`.
+- Every Kibana object that supports tags carries `gitops` and, where it belongs to a service, `service:<svc>`.
+  Dashboards are the exception: their tags are tag saved-object IDs, and Serverless has no tagging API.
 - Classic rules also declare `Missing Elastic Cloud API Key`, which Serverless adds to rules created with a project
   API key (see `CAPABILITIES.md`).
 

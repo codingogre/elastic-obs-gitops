@@ -17,7 +17,7 @@ Terraform 1.15.6 (probe roots in `tools/probe/`).
 | Data view | native `elasticstack_kibana_data_view` | ✅ | ✅ (replace on id change) | not tested | ✅ | not tested | Caller-chosen `data_view.id` |
 | Dashboard (typed) | native `elasticstack_kibana_dashboard` | ✅ | ✅ in place | ✅ (plus one cosmetic in-place update, then clean) | ✅ | ✅ after manual cleanup | Caller-chosen `dashboard_id`. **`access_control` does not work with an API key on 9.6 Serverless** (see below). Markdown, ES\|QL metric and ES\|QL XY panels are all representable |
 | SLO (custom KQL) | native `elasticstack_kibana_slo` | ✅ | ✅ in place (revision 1 → 2, same ID) | ✅ clean once `group_by = ["*"]` is declared | ✅ | not tested | Caller-chosen `slo_id`. Computes on managed-OTLP traces |
-| SLO (APM availability) | native `elasticstack_kibana_slo` | ✅ | not tested | not tested | ✅ | not tested | **Works on managed-OTLP data** with `index = "metrics-*.otel-*"`; same good/total as the KQL SLO |
+| SLO (APM availability and latency) | native `elasticstack_kibana_slo` | ✅ | ✅ | ✅ | ✅ | not tested | **Works on managed-OTLP data** with `index = "metrics-*.otel-*"`; same good/total as the KQL SLO |
 | Classic rule, ES\|QL (`.es-query`) | native `elasticstack_kibana_alerting_rule` | ✅ | ✅ in place | ✅ clean once server-default params are declared | ✅ | not tested | Caller-chosen `rule_id`. Needs the server tag `Missing Elastic Cloud API Key` in `tags` (see below). Workflows system action runs a workflow end to end |
 | Classic rule, SLO burn rate | native `elasticstack_kibana_alerting_rule` | ✅ | not tested | ✅ clean | ✅ | not tested | Same tag issue |
 | Workflow (as a rule target) | native `elasticstack_kibana_agentbuilder_workflow` | ✅ | not tested | not tested | ✅ | not tested | Caller-chosen `workflow_id` (a slug is accepted). Workflow IDs collide with other agents' probe objects in the same space: pick distinct prefixes |
@@ -102,3 +102,44 @@ Kibana objects are space-aware: an object created under `/s/<space>` returns 404
   `http.response.status_code`. Span kind is `kind` (`Server`/`Client`); `status.code` is `"Error"` only on errors;
   `duration` is nanoseconds; `transaction.duration.us` is microseconds. Logs: `log.level`, `message`.
 - APM-indicator SLOs work on managed-OTLP data with `index = "metrics-*.otel-*"`.
+
+## Found while building the bundle (2026-09-17)
+
+**Connectors**
+- The GitHub dispatch `.http` connector works with `hasAuth = true`, `authType = "webhook-authentication-basic"`,
+  `hasProxyAuth = false` and no basic credentials: only the secret header `Authorization: Bearer <token>` is sent.
+  `repository_dispatch` returns 204. `_execute` params are `{method, path, body}`; an upstream non-2xx still returns
+  HTTP 200 from Kibana with `status: error`.
+- ServiceNow `pushToService` returns `{id, title (INC number), url, pushedDate}`. `closeIncident` with
+  `{incident: {correlation_id, externalId: null}}` closes it; Kibana supplies `close_code` and close notes.
+- PagerDuty `_execute` returns `{status: success, message, dedup_key}`.
+- **A saved plan file (`plan -out`) contains every input variable in clear text, sensitive ones included.** Plan
+  files are created and applied inside one job and never uploaded.
+
+**Dashboards (typed resource)**
+- ES|QL data-table columns must declare Kibana's defaults (rows: `alignment left, click_filter false, color auto,
+  visible true`; metrics: `alignment right, color auto, visible true`) or create fails with an inconsistent result.
+- ES|QL XY charts accept only data layers, so a threshold line is a constant column.
+- Dashboard `tags` are tag saved-object IDs; Serverless has no tagging API.
+- Import shows one cosmetic in-place update (computed `config_json`, JSON whitespace, `legend.size`), then plans clean.
+
+**SLOs and rules**
+- The APM latency indicator (`sli.apm.transactionDuration`) also works on managed-OTLP data.
+- Burn-rate `maxBurnRateThreshold` is the SLO window in hours divided by the long window in hours (168, 28 and 7
+  for a 7-day SLO with 1h, 6h and 24h long windows).
+
+**Workflows**
+- `{{ kibanaUrl }}` is the Kibana base URL without the space.
+- ES|QL steps take positional `params` only and accept a `filter` range on `@timestamp`.
+- The workflow `http` step with `connector-id` of a `.http` connector returns `{status, statusText, headers, data}`.
+- The first ES|QL query against `traces-*` can be cold (38 s once); steps carry a timeout and a retry.
+
+**Agent Builder**
+- A skill can reference at most five tools (HTTP 400).
+- ES|QL tool parameter types: string, integer, float, boolean, date, array; create checks syntax and parameter use,
+  not index existence.
+- Agents created through the API are `access_mode: private` and owned by the API key's user;
+  `PUT /api/agent_builder/agents/{id}` with `{"access_control": {"access_mode": "shared"}}` changes it (not in the
+  provider).
+- `get_index_mapping` on a busy `traces-*` returns about 200k tokens; the reviewer does not use it.
+- Converse times: reviewer about 75 s, remediator about 56 s, assistant about 20 s.

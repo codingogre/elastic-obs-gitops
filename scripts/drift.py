@@ -196,8 +196,9 @@ def cmd_report(args):
 
         first = item["changes"][0] if item["changes"] else {"path": "-", "before": None, "after": None}
         card = {
-            "title": f"[GITOPS-DEMO] {verb} · {env}",
-            "subtitle": f"{item['object_id']}",
+            "title": f"{verb} · {env}",
+            "subtitle": f"{item['object_id']} · {item['drift']}",
+            "badge": "DRIFT CONTROL · " + {"reverted": "REVERTED", "needs_human": "NEEDS A HUMAN", "failed": "REVERT FAILED"}[args.status],
             "status": "good" if reverted else "attention",
             "text": (explanation.split("\n")[0][:400] if explanation else
                      ("Prod matches Git again. The GitHub issue has the full diff." if reverted
