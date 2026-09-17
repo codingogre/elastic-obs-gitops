@@ -24,7 +24,8 @@ concurrency:
 
 jobs:
   promote:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # After a dev apply this runs only when the repository variable AUTO_PROMOTE is "true"; on demand it always runs.
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && vars.AUTO_PROMOTE == 'true')
     runs-on: ubuntu-latest
     environment:
       name: dev
