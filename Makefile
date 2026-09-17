@@ -34,3 +34,38 @@ platform-init:
 
 platform-plan:
 	$(PY) scripts/with_env.py platform -- terraform -chdir=platform plan -input=false
+
+# ── Pipeline helpers (all read credentials through scripts/with_env.py) ───────
+VENV_PY ?= .venv/bin/python
+SERVICE ?= grid-dispatch
+VERSION ?= 2.4.3
+BASELINE ?=
+MODE ?= app
+ERROR_RATE ?= 0.005
+DEGRADE_AFTER ?= 0
+TYPE ?= apply
+STATUS ?= success
+TITLE ?=
+ID ?=
+
+.PHONY: venv traffic gate event capture demo-preflight
+
+venv:
+	python3 -m venv .venv && $(VENV_PY) -m pip install -q -r scripts/requirements.txt
+
+traffic:
+	$(RUN) $(VENV_PY) scripts/traffic.py --env $(ENV) --service $(SERVICE) --version $(VERSION) \
+	  --error-rate $(ERROR_RATE) $(if $(filter-out 0,$(DEGRADE_AFTER)),--degrade-after $(DEGRADE_AFTER))
+
+gate:
+	$(RUN) python3 scripts/gate.py --service $(SERVICE) --version $(VERSION) --baseline "$(BASELINE)" --mode $(MODE) --environment $(ENV)
+
+event:
+	$(RUN) python3 scripts/emit_event.py --action $(TYPE) --env $(ENV) --outcome $(STATUS)
+
+capture:
+	@if [ "$(ENV)" != "dev" ]; then echo "Capture works on dev only."; exit 1; fi
+	$(RUN) python3 scripts/capture.py --no-pr $(if $(ID),--object-id "$(ID)",--object-title "$(TITLE)")
+
+demo-preflight:
+	$(RUN) python3 scripts/preflight_connectors.py --env $(ENV)
