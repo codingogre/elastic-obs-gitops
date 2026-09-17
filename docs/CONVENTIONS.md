@@ -7,7 +7,7 @@ depends on a server-generated ID. Environment differences live only in `envs/<en
 
 | Kind | Module | Notes |
 |---|---|---|
-| Event stream, gate index, data views, connectors | `modules/bundle/foundation` | Platform-owned |
+| Event stream, gate index, data views, connectors, Control Tower, operator role | `modules/bundle/foundation` | Platform-owned; Control Tower ES\|QL in `queries/control-tower/*.esql` |
 | Per-service dashboard, SLOs, rules, gate, agent tool | `modules/bundle/service-observability` | One instance per `catalog/services/*.yaml` |
 | Workflows | `modules/bundle/workflows` | YAML in `*.yaml` files |
 | Agents, skills, tools | `modules/bundle/agents` | Skills in `skills/*.md`, ES\|QL in `tools/*.esql` |
@@ -45,6 +45,7 @@ depends on a server-generated ID. Environment differences live only in `envs/<en
 | Alerting v2 rule (per service) | `svc-<svc>-error-spike` | |
 | Alerting v2 action policy | `gitops-route-remediation` (matches tag `gitops-remediation`) | |
 | Control Tower dashboard | `ops-gitops-control-tower` | GitOps Control Tower |
+| Kibana role for people (only where `settings.operator_role`) | `gitops-operator` | Assigned by hand as an Elastic Cloud project role |
 
 ## Tags and labels
 
@@ -69,3 +70,10 @@ depends on a server-generated ID. Environment differences live only in `envs/<en
 
 Anything created in ServiceNow, PagerDuty or Teams is created by an Elastic connector and its title starts with
 `[GITOPS-DEMO]`.
+
+## Settings
+
+`settings` is declared in every module that takes it and in both `envs/*/variables.tf`. Prod's root files come from
+`main`, but prod's bundle is pinned to a tag. **Adding** a field is safe (an older pinned bundle ignores it).
+**Renaming or removing** a field breaks every prod plan until prod pins a tag that has the change: promote such a
+change before anything else plans prod, and never pin prod to an older tag past it.

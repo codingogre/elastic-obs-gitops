@@ -44,3 +44,23 @@ or once the dashboard is captured into `modules/bundle/bespoke/`.
 **Why.** The UI-to-code story starts from a dashboard a person built by hand, and the Kibana UI saves through the
 same API. After each rehearsal the capture is reverted, so the unmanaged starting point has to be put back
 repeatably. Everything Terraform owns still has Git as its only source.
+
+## ADR-006: prod prevents hand edits with a role, not dashboard access control (2026-09-17)
+
+**Decision.** People in prod get the `gitops-operator` Kibana role (bundle, behind `settings.operator_role`):
+dashboards, Discover and APM read-only; SLOs and alerting editable; Alerting v2 action policies read-only. The unused
+`settings.dashboards_write_restricted` is removed. The role is assigned by hand in Elastic Cloud.
+
+**Why.** Dashboard `access_control.write_restricted` fails with API keys on 9.6 Serverless. A role expresses the
+real intent (Git owns dashboards) for every dashboard at once. SLOs stay editable so drift detection has something to
+revert; action policies stay read-only because saving one rebinds its dispatch to the person who saved it.
+
+## ADR-007: lead time is measured on the prod promotion event (2026-09-17)
+
+**Decision.** `apply-prod` emits the `promotion` event with `started_at` set to the earliest commit to `modules/`
+between the ref prod had and the ref it now pins, so `duration_s` is first commit to prod apply. The first promotion
+and pushes that do not change the ref carry no lead time. The Control Tower takes one value per bundle release.
+
+**Why.** It needs no new mapped field, so the existing `gitops-events` streams keep working without a rollover.
+Each project's `gitops-events` holds only its own pipeline's events: prod shows promotions, lead time and drift; dev
+shows applies, captures and config-mode gates.

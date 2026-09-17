@@ -22,7 +22,7 @@ Terraform 1.15.6 (probe roots in `tools/probe/`).
 | Classic rule, SLO burn rate | native `elasticstack_kibana_alerting_rule` | ✅ | not tested | ✅ clean | ✅ | not tested | Same tag issue |
 | Workflow (as a rule target) | native `elasticstack_kibana_agentbuilder_workflow` | ✅ | not tested | not tested | ✅ | not tested | Caller-chosen `workflow_id` (a slug is accepted). Workflow IDs collide with other agents' probe objects in the same space: pick distinct prefixes |
 | Maintenance window | native `elasticstack_kibana_maintenance_window` | ✅ (created disabled) | ✅ in place | not tested | ✅ | not tested | **No caller-chosen ID** (server UUID): expose as a Terraform output if anything references it |
-| Kibana role | native `elasticstack_kibana_security_role` | ✅ | ✅ (replace on rename) | not tested | ✅ | not tested | Serverless accepts custom roles through the Kibana role API |
+| Kibana role | native `elasticstack_kibana_security_role` | ✅ | ✅ (replace on rename) | not tested | ✅ | not tested | Serverless accepts custom roles through the Kibana role API. The `gitops-operator` shape (feature privileges only, no `base`, one space; three index groups) round-trips exactly: create, clean second plan and destroy verified in dev (`tools/probe/operator-role`) |
 | Space | native `elasticstack_kibana_space` | ✅ (by `platform/`) | not tested here | not tested here | not tested here | n/a | `gitops-dev` exists; not re-probed |
 | Stream (classic) | native `elasticstack_kibana_stream` | n/a (classic streams are import-only) | ❌ HTTP 400 | ✅ (import step itself) | n/a | not tested | **Provider 0.16.5 sends a `queries` key that 9.6 Serverless rejects.** Wired and query streams not applied in dev (they change the shared `logs.otel` root). Needs `elasticgitops` or a newer provider; verify in prod through CI |
 | Synthetics monitor | native `elasticstack_kibana_synthetics_monitor` | not applied | | | | | Schema only: `browser.screenshots` accepts `"on"`, `"off"`, `"only-on-failure"` (provider validator) |
@@ -55,8 +55,8 @@ Kibana objects are space-aware: an object created under `/s/<space>` returns 404
 ## Things that behave unexpectedly
 
 - **Dashboard `access_control`.** Setting `write_restricted` with an API key fails on 9.6 Serverless: the provider
-  reports an inconsistent result (GET omits the field) and the Dashboards API returns HTTP 500. Not used until it is
-  re-verified.
+  reports an inconsistent result (GET omits the field) and the Dashboards API returns HTTP 500. Not used; prod
+  prevents hand edits to dashboards with the `gitops-operator` role instead.
 - **Classic rules gain a server tag.** Rules created with a project API key get the tag
   `Missing Elastic Cloud API Key`. Declare it in `tags`, or the first apply reports an inconsistent result. Declare
   server-default params (`aggType`, `groupBy`, `excludeHitsFromPreviousRun`) for clean imports.
@@ -143,3 +143,37 @@ Kibana objects are space-aware: an object created under `/s/<space>` returns 404
   provider).
 - `get_index_mapping` on a busy `traces-*` returns about 200k tokens; the reviewer does not use it.
 - Converse times: reviewer about 75 s, remediator about 56 s, assistant about 20 s.
+
+## Found while building the Control Tower, operator role and act drivers (2026-09-17)
+
+**Roles (people)**
+- Kibana feature IDs on 9.6 Serverless Observability (`GET /api/features`) are the `_v2` IDs: `dashboard_v2`,
+  `discover_v2`. `visualize_v2`, `maps_v2`, `stackAlerts` and `stackAlertsOnly` are hidden; `dashboard_v2` read and
+  all include `visualize_v2` and `maps_v2`. `GET /api/security/privileges` still lists the old `dashboard`,
+  `discover`, `visualize` and `maps`. Alerting v2 has its own features: `alerting_v2_rules`, `alerting_v2_alerts`,
+  `alerting_v2_action_policies`, `alerting_v2_execution_history`.
+- A person editing an SLO needs no cluster privileges: `.slo-observability.*` read, view_index_metadata, write and
+  manage, plus read and view_index_metadata on the SLO's source index (docs, "Configure SLO access"). An `objective`
+  change bumps the revision and rebuilds transforms with the person as secondary authorization.
+- Alerting v2 reads episodes from `.rule-events` as the signed-in user and writes episode actions to `.rule-events`
+  and `.alert-actions` (`create_doc`).
+- Serverless custom roles have no `run_as`. When a custom role is assigned in Elastic Cloud, select Cloud Console,
+  Elasticsearch and Kibana access, or the person gets Viewer.
+
+**API keys**
+- **An invalidated API key breaks objects it created, silently.** On 2026-09-17 the dev key was invalidated
+  server-side. Classic rules created with it (`api_key_created_by_user: true`) then failed every run with "referencing
+  an SLO which cannot be found", and the Alerting v2 action policy stopped dispatching. Alerting v2 rules kept
+  evaluating. Recovery: `terraform apply -replace=` for the policy and the classic rules, run with the new key.
+
+**Dashboards (typed resource)**
+- ES|QL XY `breakdown_by_json`: Kibana adds a `color` mapping on read and provider 0.16.5 compares it exactly, so a
+  breakdown without a declared color fails with an inconsistent result. Use one y column per series.
+- Bar and bar_stacked layers: Kibana adds `minimum_bar_height = 1` and `show_value_labels = false`; declaring only
+  `show_current_time_marker` and `show_end_zones` plans clean.
+- ES|QL `LAST(field, @timestamp)`, `BUCKET(@timestamp, 1 week)`, aggregate `WHERE` and a two-stage `STATS` all run on
+  9.6 Serverless (Control Tower queries, run in dev).
+
+**GitHub**
+- `gh pr view <branch>` also returns merged and closed pull requests. Pipelines look up an open pull request with
+  `gh pr list --head <branch> --state open`, or a service re-onboarded after a reset gets no pull request.
