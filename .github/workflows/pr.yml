@@ -19,17 +19,32 @@ env:
   TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
   TF_STATE_REGION: ${{ secrets.TF_STATE_REGION }}
   AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+  # Same-repository pull requests only: forks get no secrets, no plans against live projects and no AI review.
+  TRUSTED: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository }}
 
 jobs:
   checks:
     name: fmt and validate
     runs-on: ubuntu-latest
+    outputs:
+      prod: ${{ steps.changes.outputs.prod }}
     steps:
       - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.15.6
-          terraform_wrapper: false
+          fetch-depth: 0
+      - id: changes
+        name: what changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            files=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          else
+            files=""
+          fi
+          if echo "$files" | grep -q '^envs/prod/'; then echo "prod=true" >> "$GITHUB_OUTPUT"; else echo "prod=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: ./.github/actions/tf-env
+        with:
+          build-provider: "true"
+          state-access: "false"
       - name: terraform fmt
         run: terraform fmt -recursive -check -diff modules envs platform
       - name: terraform validate
@@ -44,13 +59,13 @@ jobs:
   dev-plan:
     name: dev plan
     needs: checks
-    # Same-repository pull requests only: forks get no secrets and no review.
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     environment:
       name: dev
       deployment: false
     env:
+      KIBANA_SPACE: ${{ secrets.KIBANA_SPACE }}
       ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
       ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
       KIBANA_ENDPOINT: ${{ secrets.KIBANA_ENDPOINT }}
@@ -61,9 +76,12 @@ jobs:
       SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
       PD_ROUTING_KEY: ${{ secrets.PD_ROUTING_KEY }}
       GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/tf-env
+        with:
+          build-provider: "true"
       - name: init
         run: python3 scripts/with_env.py dev --backend -- terraform -chdir=envs/dev init -input=false
       - name: plan
@@ -72,10 +90,105 @@ jobs:
         run: |
           terraform -chdir=envs/dev show -json tfplan > "$RUNNER_TEMP/plan.json"
           python3 scripts/plan_summary.py "$RUNNER_TEMP/plan.json" --title "Dev plan" > "$RUNNER_TEMP/plan.md"
-          rm -f "$RUNNER_TEMP/plan.json"
           cat "$RUNNER_TEMP/plan.md" >> "$GITHUB_STEP_SUMMARY"
-      - name: comment on the pull request
+      - name: comment the plan
         if: github.event_name == 'pull_request'
+        run: python3 scripts/pr_comment.py --pr "${{ github.event.pull_request.number }}" --marker dev-plan --body-file "$RUNNER_TEMP/plan.md"
+      - name: AI review (advisory)
+        if: github.event_name == 'pull_request' && needs.checks.outputs.prod != 'true'
+        continue-on-error: true
+        timeout-minutes: 8
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file "$RUNNER_TEMP/plan.md" --edit-last --create-if-none
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          git diff --stat "origin/${{ github.base_ref }}...HEAD" > "$RUNNER_TEMP/diffstat.txt" || true
+          python3 scripts/review_plan.py --env dev --plan-json "$RUNNER_TEMP/plan.json" --diff-stat "$RUNNER_TEMP/diffstat.txt" \
+            --pr-title "$PR_TITLE" --out "$RUNNER_TEMP/review.md"
+          python3 scripts/pr_comment.py --pr "${{ github.event.pull_request.number }}" --marker ai-review --body-file "$RUNNER_TEMP/review.md"
+      - name: remove plan JSON
+        if: always()
+        run: rm -f "$RUNNER_TEMP/plan.json" envs/dev/tfplan
+
+  prod-plan:
+    name: prod plan
+    needs: checks
+    if: needs.checks.outputs.prod == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment:
+      name: prod-automation
+      deployment: false
+    env:
+      KIBANA_SPACE: ${{ secrets.KIBANA_SPACE }}
+      ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
+      ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
+      KIBANA_ENDPOINT: ${{ secrets.KIBANA_ENDPOINT }}
+      KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      SN_URL: ${{ secrets.SN_URL }}
+      SN_USER: ${{ secrets.SN_USER }}
+      SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
+      PD_ROUTING_KEY: ${{ secrets.PD_ROUTING_KEY }}
+      GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/tf-env
+        with:
+          build-provider: "true"
+      - name: init
+        run: python3 scripts/with_env.py prod --backend -- terraform -chdir=envs/prod init -input=false
+      - name: plan (read-only)
+        run: python3 scripts/with_env.py prod -- terraform -chdir=envs/prod plan -input=false -lock=false -out=tfplan
+      - name: redacted summary
+        run: |
+          terraform -chdir=envs/prod show -json tfplan > "$RUNNER_TEMP/plan.json"
+          python3 scripts/plan_summary.py "$RUNNER_TEMP/plan.json" --title "Prod plan" > "$RUNNER_TEMP/plan.md"
+          cat "$RUNNER_TEMP/plan.md" >> "$GITHUB_STEP_SUMMARY"
+          python3 scripts/pr_comment.py --pr "${{ github.event.pull_request.number }}" --marker prod-plan --body-file "$RUNNER_TEMP/plan.md"
+      - name: AI review against prod data (advisory)
+        continue-on-error: true
+        timeout-minutes: 8
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          git diff --stat "origin/${{ github.base_ref }}...HEAD" > "$RUNNER_TEMP/diffstat.txt" || true
+          python3 scripts/review_plan.py --env prod --plan-json "$RUNNER_TEMP/plan.json" --diff-stat "$RUNNER_TEMP/diffstat.txt" \
+            --pr-title "$PR_TITLE" --out "$RUNNER_TEMP/review.md"
+          python3 scripts/pr_comment.py --pr "${{ github.event.pull_request.number }}" --marker ai-review --body-file "$RUNNER_TEMP/review.md"
+      - name: remove plan JSON
+        if: always()
+        run: rm -f "$RUNNER_TEMP/plan.json" envs/prod/tfplan
+
+  release-gate:
+    name: release gate
+    needs: checks
+    if: needs.checks.outputs.prod == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      deployment: false
+    env:
+      GITOPS_ENV: dev
+      KIBANA_SPACE: ${{ secrets.KIBANA_SPACE }}
+      ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
+      ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
+      KIBANA_ENDPOINT: ${{ secrets.KIBANA_ENDPOINT }}
+      KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: config-mode gate for every tier-1 service
+        run: |
+          tag=$(grep -oE 'ref=obs-v[0-9]+\.[0-9]+\.[0-9]+' envs/prod/main.tf | cut -d= -f2 || echo local)
+          failed=0
+          for f in modules/bundle/catalog/services/*.yaml; do
+            grep -qE '^tier:[[:space:]]*1' "$f" || continue
+            python3 scripts/gate.py --mode config --service "$(basename "$f" .yaml)" --version "$tag" \
+              --environment dev --notify never --warn-exit 0 || failed=1
+          done
+          exit "$failed"

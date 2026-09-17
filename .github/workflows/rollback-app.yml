@@ -1,0 +1,54 @@
+name: rollback-app
+run-name: rollback ${{ github.event.client_payload.service || inputs.service }} ${{ github.event.client_payload.version || inputs.version }}
+
+# Receives the rollback the remediation workflow requests after a person approves it in Elastic.
+on:
+  repository_dispatch:
+    types: [rollback]
+  workflow_dispatch:
+    inputs:
+      service:
+        required: true
+        default: grid-dispatch
+      version:
+        required: true
+      env:
+        type: choice
+        options: [dev, prod]
+        default: prod
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: ${{ (github.event.client_payload.environment || inputs.env) == 'prod' && 'prod-automation' || 'dev' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SERVICE: ${{ github.event.client_payload.service || inputs.service }}
+      VERSION: ${{ github.event.client_payload.version || inputs.version }}
+      GITOPS_ENV: ${{ github.event.client_payload.environment || inputs.env }}
+      EPISODE: ${{ github.event.client_payload.episode_id }}
+      ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
+      ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: stop the release
+        run: |
+          title="release $SERVICE $VERSION to $GITOPS_ENV"
+          ids=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow release-app.yml --json databaseId,displayTitle,status \
+            --jq ".[] | select(.displayTitle == \"$title\" and (.status == \"in_progress\" or .status == \"queued\")) | .databaseId")
+          if [ -z "$ids" ]; then
+            echo "No running release matches \"$title\"." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          for id in $ids; do
+            gh run cancel "$id" --repo "$GITHUB_REPOSITORY"
+            echo "Cancelled release run $id ($title)." | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+      - name: rollback event
+        run: |
+          python3 scripts/emit_event.py --action rollback --env "$GITOPS_ENV" --service "$SERVICE" --version "$VERSION" \
+            --details "{\"episode_id\": \"${EPISODE}\", \"trigger\": \"${{ github.event_name }}\"}" \
+            --message "Rolled back $SERVICE $VERSION after approval"

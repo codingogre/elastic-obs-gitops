@@ -1,0 +1,117 @@
+name: release-app
+run-name: release ${{ inputs.service }} ${{ inputs.version }} to ${{ inputs.env }}
+
+# Simulates an application release: the candidate version takes traffic, bakes, and must pass its
+# release gate (objectives defined as code in the bundle, evaluated inside Elastic) before it is kept.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        type: choice
+        options: [grid-dispatch, turbine-telemetry, field-service]
+        default: grid-dispatch
+      version:
+        description: Candidate version
+        required: true
+        default: 2.5.0
+      baseline:
+        description: Version currently in production
+        default: 2.4.3
+      env:
+        type: choice
+        options: [dev, prod]
+        default: prod
+      error_rate:
+        description: Candidate error rate while healthy (0.15 = a visibly bad release)
+        default: "0.005"
+      degrade_after:
+        description: Seconds after start when a latent bug appears (0 = never)
+        default: "0"
+      degraded_error_rate:
+        default: "0.12"
+      bake_minutes:
+        default: "3"
+      watch_minutes:
+        description: Keep the release running after a pass, so a rollback can stop it
+        default: "15"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.service }}-${{ inputs.env }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Application releases don't change observability configuration, so they need no approver.
+    environment: ${{ inputs.env == 'prod' && 'prod-automation' || 'dev' }}
+    env:
+      GITOPS_ENV: ${{ inputs.env }}
+      ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
+      ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
+      KIBANA_ENDPOINT: ${{ secrets.KIBANA_ENDPOINT }}
+      KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+      KIBANA_SPACE: ${{ secrets.KIBANA_SPACE }}
+      OTLP_ENDPOINT: ${{ secrets.OTLP_ENDPOINT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+      - run: pip install -r scripts/requirements.txt
+
+      - name: start the candidate
+        run: |
+          echo "STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" >> "$GITHUB_ENV"
+          python3 scripts/emit_event.py --action release_started --env "$GITOPS_ENV" \
+            --service "${{ inputs.service }}" --version "${{ inputs.version }}" --baseline-version "${{ inputs.baseline }}"
+          degrade=()
+          if [ "${{ inputs.degrade_after }}" != "0" ]; then
+            degrade=(--degrade-after "${{ inputs.degrade_after }}" --degraded-error-rate "${{ inputs.degraded_error_rate }}")
+          fi
+          nohup python3 scripts/traffic.py --env "$GITOPS_ENV" --service "${{ inputs.service }}" \
+            --version "${{ inputs.version }}" --rps 5 --error-rate "${{ inputs.error_rate }}" \
+            --run-id "$GITHUB_RUN_ID" "${degrade[@]}" > "$RUNNER_TEMP/candidate.log" 2>&1 &
+          echo "CANDIDATE_PID=$!" >> "$GITHUB_ENV"
+
+      - name: bake
+        run: |
+          sleep $(( ${{ inputs.bake_minutes }} * 60 ))
+          tail -n 3 "$RUNNER_TEMP/candidate.log"
+
+      - name: release gate
+        id: gate
+        run: |
+          python3 scripts/gate.py --service "${{ inputs.service }}" --version "${{ inputs.version }}" \
+            --baseline "${{ inputs.baseline }}" --mode app --window "${{ inputs.bake_minutes }}m" \
+            --environment "$GITOPS_ENV" --notify fail --warn-exit 0
+
+      - name: roll back a blocked release
+        if: failure() && steps.gate.outcome == 'failure'
+        run: |
+          kill "$CANDIDATE_PID" 2>/dev/null || true
+          python3 scripts/emit_event.py --action rollback --env "$GITOPS_ENV" --outcome success \
+            --service "${{ inputs.service }}" --version "${{ inputs.version }}" --baseline-version "${{ inputs.baseline }}" \
+            --started-at "$STARTED_AT" --message "Release gate failed; ${{ inputs.service }} stays on ${{ inputs.baseline }}"
+
+      - name: release succeeded
+        run: |
+          python3 scripts/emit_event.py --action release_succeeded --env "$GITOPS_ENV" \
+            --service "${{ inputs.service }}" --version "${{ inputs.version }}" --baseline-version "${{ inputs.baseline }}" \
+            --started-at "$STARTED_AT"
+
+      - name: watch
+        run: |
+          end=$(( $(date +%s) + ${{ inputs.watch_minutes }} * 60 ))
+          while [ "$(date +%s)" -lt "$end" ] && kill -0 "$CANDIDATE_PID" 2>/dev/null; do
+            sleep 30
+            tail -n 1 "$RUNNER_TEMP/candidate.log"
+          done
+
+      - name: stop the candidate
+        if: always()
+        run: kill "$CANDIDATE_PID" 2>/dev/null || true

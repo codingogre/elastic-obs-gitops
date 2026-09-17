@@ -1,0 +1,87 @@
+name: drift-prod
+
+# Detects changes made to prod outside Git and puts prod back to what Git says. Only objects Terraform saw
+# change outside Terraform are reverted; merged changes still waiting for apply-prod are never applied here.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+
+concurrency:
+  group: tf-prod
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+  TF_STATE_REGION: ${{ secrets.TF_STATE_REGION }}
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+jobs:
+  drift:
+    # The schedule stays off until prod is live (repository variable DRIFT_SCHEDULE_ENABLED=true).
+    if: github.event_name == 'workflow_dispatch' || vars.DRIFT_SCHEDULE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: prod-automation
+    env:
+      GITOPS_ENV: prod
+      GH_TOKEN: ${{ github.token }}
+      ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
+      ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
+      KIBANA_ENDPOINT: ${{ secrets.KIBANA_ENDPOINT }}
+      KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+      KIBANA_SPACE: ${{ secrets.KIBANA_SPACE }}
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      SN_URL: ${{ secrets.SN_URL }}
+      SN_USER: ${{ secrets.SN_USER }}
+      SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
+      PD_ROUTING_KEY: ${{ secrets.PD_ROUTING_KEY }}
+      GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/tf-env
+        with:
+          build-provider: "true"
+      - name: init
+        run: python3 scripts/with_env.py prod --backend -- terraform -chdir=envs/prod init -input=false
+
+      - name: detect
+        id: detect
+        run: |
+          echo "STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" >> "$GITHUB_ENV"
+          python3 scripts/with_env.py prod -- terraform -chdir=envs/prod plan -input=false -lock-timeout=5m -out=drift.tfplan
+          terraform -chdir=envs/prod show -json drift.tfplan > "$RUNNER_TEMP/plan.json"
+          set +e
+          python3 scripts/drift.py classify "$RUNNER_TEMP/plan.json" --out "$RUNNER_TEMP/drift.json" --targets-file "$RUNNER_TEMP/targets.txt"
+          code=$?
+          set -e
+          rm -f "$RUNNER_TEMP/plan.json"
+          case "$code" in
+            0)  echo "status=none" >> "$GITHUB_OUTPUT"; echo "No drift in prod." >> "$GITHUB_STEP_SUMMARY" ;;
+            10) echo "status=revertible" >> "$GITHUB_OUTPUT" ;;
+            20) echo "status=needs_human" >> "$GITHUB_OUTPUT" ;;
+            *)  exit "$code" ;;
+          esac
+          policy=$(grep -oE 'drift_policy[[:space:]]*=[[:space:]]*"[a-z]+"' envs/prod/terraform.tfvars | grep -oE '"[a-z]+"' | tr -d '"')
+          echo "policy=$policy" >> "$GITHUB_OUTPUT"
+
+      - name: revert
+        id: revert
+        if: steps.detect.outputs.status == 'revertible' && steps.detect.outputs.policy == 'revert'
+        run: |
+          mapfile -t targets < "$RUNNER_TEMP/targets.txt"
+          python3 scripts/with_env.py prod -- terraform -chdir=envs/prod apply -input=false -lock-timeout=5m -auto-approve "${targets[@]}"
+
+      - name: report
+        if: always() && (steps.detect.outputs.status == 'revertible' || steps.detect.outputs.status == 'needs_human')
+        run: |
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ "${{ steps.detect.outputs.status }}" = "needs_human" ]; then status=needs_human
+          elif [ "${{ steps.revert.outcome }}" = "success" ]; then status=reverted
+          else status=failed; fi
+          python3 scripts/drift.py report "$RUNNER_TEMP/drift.json" --status "$status" --started-at "$STARTED_AT" --run-url "$run_url"

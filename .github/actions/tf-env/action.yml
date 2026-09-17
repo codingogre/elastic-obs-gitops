@@ -10,6 +10,9 @@ inputs:
   provider-version:
     description: Version the mirror advertises; must match versions.tf.
     default: 0.1.0
+  state-access:
+    description: Assume the state role (not needed for fmt and validate).
+    default: "true"
 runs:
   using: composite
   steps:
@@ -23,6 +26,7 @@ runs:
         python-version: "3.12"
 
     - name: State access (OIDC)
+      if: inputs.state-access == 'true'
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ env.AWS_ROLE_ARN }}

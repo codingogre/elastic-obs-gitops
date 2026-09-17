@@ -1,0 +1,129 @@
+name: promote
+
+# Opens the pull request that moves prod to the newest bundle release. Prod never follows main: it moves only when
+# this pull request passes its checks (prod plan, release gate) and a person approves the prod deployment.
+on:
+  workflow_run:
+    workflows: [apply-dev]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Bundle release to promote (default the newest obs-v* tag)
+        default: ""
+      skip_soak:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: promote
+  cancel-in-progress: true
+
+jobs:
+  promote:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      deployment: false
+    env:
+      GH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+      GITOPS_ENV: dev
+      ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
+      ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
+      KIBANA_ENDPOINT: ${{ secrets.KIBANA_ENDPOINT }}
+      KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+      KIBANA_SPACE: ${{ secrets.KIBANA_SPACE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GH_DISPATCH_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: choose the release
+        id: release
+        run: |
+          git fetch --tags --force
+          tag="${{ inputs.tag }}"
+          if [ -z "$tag" ]; then tag=$(git tag --list 'obs-v*' --sort=-v:refname | head -n 1); fi
+          current=$(grep -oE 'ref=obs-v[0-9]+\.[0-9]+\.[0-9]+' envs/prod/main.tf | cut -d= -f2 || true)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          if [ -z "$tag" ] || [ "$tag" = "$current" ]; then
+            echo "Prod already runs ${current:-the local bundle}; nothing to promote." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: soak
+        if: steps.release.outputs.skip != 'true' && inputs.skip_soak != true
+        run: |
+          soak=$(grep -oE 'gate_soak_seconds[[:space:]]*=[[:space:]]*[0-9]+' envs/dev/terraform.tfvars | grep -oE '[0-9]+$')
+          echo "Soaking ${soak}s in dev before the gate."
+          sleep "${soak:-60}"
+
+      - name: release gate in dev (config mode)
+        if: steps.release.outputs.skip != 'true'
+        id: gate
+        run: |
+          : > "$RUNNER_TEMP/gate.md"
+          verdict=pass
+          for f in modules/bundle/catalog/services/*.yaml; do
+            svc=$(basename "$f" .yaml)
+            grep -qE '^tier:[[:space:]]*1' "$f" || continue
+            set +e
+            GITHUB_STEP_SUMMARY="$RUNNER_TEMP/gate.md" python3 scripts/gate.py --mode config --service "$svc" \
+              --version "${{ steps.release.outputs.tag }}" --environment dev --notify fail --warn-exit 0
+            code=$?
+            set -e
+            [ "$code" -ne 0 ] && verdict=fail
+          done
+          cat "$RUNNER_TEMP/gate.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+
+      - name: open the promotion pull request
+        if: steps.release.outputs.skip != 'true'
+        run: |
+          tag="${{ steps.release.outputs.tag }}"
+          current="${{ steps.release.outputs.current }}"
+          source="git::https://github.com/${GITHUB_REPOSITORY}.git//modules/bundle?ref=${tag}"
+          sed -i -E "s|^([[:space:]]*source[[:space:]]*=[[:space:]]*)\"[^\"]*\".*$|\1\"${source}\"|" envs/prod/main.tf
+          terraform_fmt_ok=$(grep -c "ref=${tag}" envs/prod/main.tf)
+          [ "$terraform_fmt_ok" -eq 1 ] || { echo "could not bump envs/prod/main.tf"; exit 1; }
+
+          branch="promote/${tag}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add envs/prod/main.tf
+          git commit -m "Promote bundle ${tag} to prod"
+          git push --force origin "$branch"
+
+          range="${current:+${current}..}${tag}"
+          {
+            echo "Moves prod to bundle **${tag}**${current:+ (from ${current})}. Same objects, same IDs as dev."
+            echo
+            echo "### What changes"
+            echo
+            git log --no-merges --pretty='- %s' "$range" -- modules | head -n 40
+            echo
+            echo "### Release gate in dev (config mode): **${{ steps.gate.outputs.verdict }}**"
+            echo
+            cat "$RUNNER_TEMP/gate.md"
+            echo
+            echo "Checks on this pull request plan prod and re-run the gate. Merging starts apply-prod, which waits for an approver."
+          } > "$RUNNER_TEMP/body.md"
+
+          if gh pr view "$branch" --json number >/dev/null 2>&1; then
+            gh pr edit "$branch" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --base main --head "$branch" --title "Promote bundle ${tag} → prod" \
+              --label promotion --body-file "$RUNNER_TEMP/body.md"
+          fi
+          gh pr view "$branch" --json url --jq .url | tee -a "$GITHUB_STEP_SUMMARY"
