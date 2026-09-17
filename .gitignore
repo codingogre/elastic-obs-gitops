@@ -1,0 +1,31 @@
+# Local-only session notes
+.sessions/
+
+# Credentials and private identifiers (never committed)
+.env
+.env.*
+
+# Terraform working files and state
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+generated.tf
+# Provider lock files are not committed: elasticgitops is built from source per platform (DECISIONS ADR-002)
+.terraform.lock.hcl
+tools/capture/scratch/imports.tf
+
+# Provider filesystem mirror built locally or in CI
+.terraform.d/
+.provider-mirror/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/
