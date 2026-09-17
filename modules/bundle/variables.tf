@@ -6,13 +6,13 @@ variable "space_id" {
 variable "settings" {
   description = "Environment settings. The only place dev and prod differ, apart from credentials."
   type = object({
-    environment                 = string
-    alerting_v2_enabled         = bool
-    manage_global_settings      = bool
-    dashboards_write_restricted = bool
-    drift_policy                = string
-    gitops_events_retention     = string
-    gate_soak_seconds           = number
+    environment             = string
+    alerting_v2_enabled     = bool
+    manage_global_settings  = bool
+    operator_role           = bool
+    drift_policy            = string
+    gitops_events_retention = string
+    gate_soak_seconds       = number
   })
 
   validation {
