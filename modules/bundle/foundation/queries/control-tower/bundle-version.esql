@@ -1,0 +1,6 @@
+FROM gitops-events
+| WHERE event.action IN ("apply", "promotion") AND event.outcome == "success" AND gitops.bundle_version IS NOT NULL
+| STATS bundle_version = LAST(gitops.bundle_version, @timestamp), deployed_at = MAX(@timestamp) BY gitops.env
+| EVAL hours_ago = ROUND(DATE_DIFF("minute", deployed_at, NOW()) / 60.0, 1)
+| KEEP gitops.env, bundle_version, deployed_at, hours_ago
+| SORT gitops.env

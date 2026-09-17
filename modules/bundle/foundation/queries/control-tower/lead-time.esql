@@ -1,0 +1,5 @@
+FROM gitops-events
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend
+    AND event.action == "promotion" AND event.outcome == "success" AND gitops.duration_s IS NOT NULL
+| STATS lead_s = MIN(gitops.duration_s) BY gitops.bundle_version
+| STATS lead_time_minutes = ROUND(MEDIAN(lead_s) / 60.0, 0)

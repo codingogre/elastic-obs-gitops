@@ -48,7 +48,6 @@ jobs:
         run: python3 scripts/with_env.py prod --backend -- terraform -chdir=envs/prod init -input=false
       - name: plan
         run: |
-          echo "STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" >> "$GITHUB_ENV"
           python3 scripts/with_env.py prod -- terraform -chdir=envs/prod plan -input=false -out=tfplan
           terraform -chdir=envs/prod show -json tfplan > "$RUNNER_TEMP/plan.json"
           python3 scripts/plan_summary.py "$RUNNER_TEMP/plan.json" --title "Prod apply" >> "$GITHUB_STEP_SUMMARY"
@@ -60,4 +59,18 @@ jobs:
         run: |
           version=$(grep -oE 'ref=obs-v[0-9]+\.[0-9]+\.[0-9]+' envs/prod/main.tf | cut -d= -f2 || true)
           outcome=${{ job.status == 'success' && 'success' || 'failure' }}
-          python3 scripts/emit_event.py --action promotion --env prod --outcome "$outcome" --started-at "$STARTED_AT" --bundle-version "${version:-local}" || true
+          # Lead time: the promotion starts at the earliest commit to modules/ that this release brings to prod
+          # (since the ref it replaces), so the event's duration_s is first commit to prod apply. The first promotion
+          # (no ref to replace) and a push that does not bring the ref change (tfvars only) carry no lead time.
+          lead=()
+          if [ -n "$version" ]; then
+            git fetch --quiet --tags --unshallow origin || git fetch --quiet --tags origin || true
+            bump=$(git log -1 --format=%H -G 'ref=obs-v[0-9]' -- envs/prod/main.tf || true)
+            previous=$(git show "${bump}^:envs/prod/main.tf" 2>/dev/null | grep -oE 'ref=obs-v[0-9]+\.[0-9]+\.[0-9]+' | cut -d= -f2 || true)
+            if [ "${{ github.event_name }}" = push ] && git merge-base --is-ancestor "$bump" "${{ github.event.before }}" 2>/dev/null; then previous=""; fi
+            if [ -n "$previous" ]; then
+              first=$(git log --format=%at "${previous}..${version}" -- modules 2>/dev/null | sort -n | head -n 1)
+              if [ -n "$first" ]; then lead=(--started-at "$(date -u -d "@$first" +%Y-%m-%dT%H:%M:%S.000Z)"); fi
+            fi
+          fi
+          python3 scripts/emit_event.py --action promotion --env prod --outcome "$outcome" "${lead[@]}" --bundle-version "${version:-local}" || true

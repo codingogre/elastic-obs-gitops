@@ -1,0 +1,10 @@
+FROM gitops-events
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend
+    AND event.action IN ("release_started", "gate_evaluated", "rollback")
+| STATS started = COUNT(*) WHERE event.action == "release_started",
+    failed = COUNT(*) WHERE event.action == "rollback" OR gitops.verdict == "fail"
+    BY gitops.env, gitops.service, gitops.service_version
+| WHERE started > 0
+| STATS releases = COUNT(*), failed_releases = COUNT(*) WHERE failed > 0
+| EVAL change_failure_pct = CASE(releases > 0, ROUND(100.0 * failed_releases / releases, 1), null)
+| KEEP change_failure_pct, failed_releases, releases

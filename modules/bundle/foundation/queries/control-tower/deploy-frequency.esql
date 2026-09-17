@@ -1,0 +1,6 @@
+FROM gitops-events
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend
+    AND event.action IN ("apply", "promotion") AND event.outcome == "success"
+| STATS applies = COUNT(*) WHERE event.action == "apply", promotions = COUNT(*) WHERE event.action == "promotion"
+    BY day = BUCKET(@timestamp, 1 day)
+| SORT day

@@ -73,7 +73,9 @@ def main():
     p.add_argument("--resource-address", action="append")
     p.add_argument("--verdict", choices=["pass", "warn", "fail"])
     p.add_argument("--reason", action="append")
-    p.add_argument("--started-at", help="ISO 8601 start time; the ingest pipeline derives duration_s from it")
+    p.add_argument("--started-at", help="ISO 8601 start time; the ingest pipeline derives duration_s from it. "
+                                        "For a promotion it is the first commit the release brings, so duration_s is "
+                                        "the lead time; for drift_reverted it is the detection time")
     p.add_argument("--duration-s", type=float)
     p.add_argument("--pr-number", type=int)
     p.add_argument("--details", help="JSON object stored as flattened gitops.details")

@@ -10,3 +10,7 @@ output "global_settings_ready" {
   description = "Depend on this before creating Alerting v2 objects."
   value       = [for s in elasticgitops_kibana_setting.alerting_v2 : s.id]
 }
+
+output "control_tower_dashboard_id" {
+  value = elasticstack_kibana_dashboard.control_tower.dashboard_id
+}

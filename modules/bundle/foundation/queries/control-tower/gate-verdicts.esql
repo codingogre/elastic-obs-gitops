@@ -1,0 +1,6 @@
+FROM gitops-events
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend AND event.action == "gate_evaluated"
+| STATS passed = COUNT(*) WHERE gitops.verdict == "pass", warned = COUNT(*) WHERE gitops.verdict == "warn",
+    failed = COUNT(*) WHERE gitops.verdict == "fail"
+    BY bucket = BUCKET(@timestamp, 50, ?_tstart, ?_tend)
+| SORT bucket

@@ -1,0 +1,4 @@
+FROM gitops-events
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend
+    AND event.action == "drift_reverted" AND gitops.duration_s IS NOT NULL
+| STATS mttr_minutes = ROUND(AVG(gitops.duration_s) / 60.0, 1)

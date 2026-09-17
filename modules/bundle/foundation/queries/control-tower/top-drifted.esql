@@ -1,0 +1,5 @@
+FROM gitops-events
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend AND event.action == "drift_detected"
+| STATS detections = COUNT(*), last_detected = MAX(@timestamp) BY gitops.resource_address
+| SORT detections DESC, last_detected DESC
+| LIMIT 10

@@ -1,0 +1,4 @@
+FROM gitops-events
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend AND event.action == "capture"
+| STATS captures = COUNT(*) BY week = BUCKET(@timestamp, 1 week)
+| SORT week
