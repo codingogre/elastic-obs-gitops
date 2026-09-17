@@ -1,0 +1,3149 @@
+{
+  "source": "https://raw.githubusercontent.com/elastic/kibana/main/oas_docs/output/kibana.serverless.yaml",
+  "openapi_info_version": "",
+  "paths": {
+    "/api/alerting/v2/rules": {
+      "get": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb get\">get</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/alerting/v2/rules</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\n[Required authorization] Route required privileges: read_alerting-v2-rules.",
+        "operationId": "get-alerting-v2-rules",
+        "parameters": [
+          {
+            "description": "The page number to return. Defaults to 1. `page * per_page` cannot exceed 10000.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The number of rules to return per page. Defaults to 20.",
+            "in": "query",
+            "name": "per_page",
+            "required": false,
+            "schema": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The filter to apply to the rules.",
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "maxLength": 4096,
+              "type": "string"
+            }
+          },
+          {
+            "description": "The field to sort rules by.",
+            "in": "query",
+            "name": "sort_field",
+            "required": false,
+            "schema": {
+              "enum": [
+                "kind",
+                "enabled",
+                "name"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The direction to sort rules.",
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "A text string to search across rule fields.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "listRulesResponse": {
+                    "summary": "Paginated list containing one matching rule",
+                    "value": {
+                      "items": [
+                        {
+                          "created_at": "2026-01-15T12:00:00.000Z",
+                          "created_by": "elastic",
+                          "enabled": true,
+                          "grouping": {
+                            "fields": [
+                              "host.name"
+                            ]
+                          },
+                          "id": "rule-1",
+                          "kind": "alert",
+                          "metadata": {
+                            "description": "Alerts when average CPU usage exceeds a threshold.",
+                            "name": "Host CPU high",
+                            "tags": [
+                              "production",
+                              "infra"
+                            ],
+                            "version": 1
+                          },
+                          "query": {
+                            "breach": {
+                              "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                            },
+                            "format": "standalone"
+                          },
+                          "recovery_strategy": "no_breach",
+                          "schedule": {
+                            "every": "1m",
+                            "lookback": "5m"
+                          },
+                          "state_transition": {
+                            "pending_count": 1,
+                            "recovering_count": 1
+                          },
+                          "time_field": "@timestamp",
+                          "updated_at": "2026-01-15T12:00:00.000Z",
+                          "updated_by": "elastic",
+                          "version": "WzAsMV0="
+                        }
+                      ],
+                      "page": 1,
+                      "per_page": 20,
+                      "total": 1
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_list_response"
+                }
+              }
+            },
+            "description": "Returns a paginated list of rules."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalidRequest": {
+                    "summary": "Indicates an invalid schema or parameters.",
+                    "value": {
+                      "code": "BAD_REQUEST",
+                      "details": {
+                        "errors": {
+                          "errors": [],
+                          "properties": {
+                            "page": {
+                              "errors": [
+                                "Too small: expected number to be >=1"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "error": "Bad Request",
+                      "message": "page: Too small: expected number to be >=1"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an invalid schema or parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "summary": "Request was not authenticated",
+                    "value": {
+                      "code": "UNAUTHORIZED",
+                      "error": "Unauthorized",
+                      "message": "Authentication required to access this API."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request was not authenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "summary": "Caller lacks required privileges",
+                    "value": {
+                      "code": "FORBIDDEN",
+                      "error": "Forbidden",
+                      "message": "The current user does not have the required privileges for this request."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the user does not have the required privileges to perform the request."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "internalServerError": {
+                    "summary": "Unexpected server-side error",
+                    "value": {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "error": "Internal Server Error",
+                      "message": "An unexpected error occurred."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an unexpected server-side error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "alertingDisabled": {
+                    "summary": "Alerting V2 is disabled",
+                    "value": {
+                      "code": "ALERTING_DISABLED",
+                      "error": "Service Unavailable",
+                      "message": "Alerting is disabled."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the alerting engine is disabled by the `alerting:v2:enabled` advanced setting."
+          }
+        },
+        "summary": "List rules",
+        "tags": [
+          "alerting-v2"
+        ],
+        "x-state": "Experimental",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      },
+      "post": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb post\">post</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/alerting/v2/rules</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nCreates a rule with a server-generated identifier. To create or replace a rule with a client-supplied identifier, use PUT /api/alerting/v2/rules/.<br/><br/>[Required authorization] Route required privileges: manage_alerting-v2-rules.",
+        "operationId": "post-alerting-v2-rules",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "createRuleRequest": {
+                  "summary": "Create a host CPU threshold rule",
+                  "value": {
+                    "grouping": {
+                      "fields": [
+                        "host.name"
+                      ]
+                    },
+                    "kind": "alert",
+                    "metadata": {
+                      "description": "Alerts when average CPU usage exceeds a threshold.",
+                      "name": "Host CPU high",
+                      "tags": [
+                        "production",
+                        "infra"
+                      ]
+                    },
+                    "query": {
+                      "breach": {
+                        "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                      },
+                      "format": "standalone"
+                    },
+                    "recovery_strategy": "no_breach",
+                    "schedule": {
+                      "every": "1m",
+                      "lookback": "5m"
+                    },
+                    "state_transition": {
+                      "pending_count": 1,
+                      "recovering_count": 1
+                    },
+                    "time_field": "@timestamp"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_new_rule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "createRuleResponse": {
+                    "summary": "Created host CPU threshold rule",
+                    "value": {
+                      "created_at": "2026-01-15T12:00:00.000Z",
+                      "created_by": "elastic",
+                      "enabled": true,
+                      "grouping": {
+                        "fields": [
+                          "host.name"
+                        ]
+                      },
+                      "id": "rule-1",
+                      "kind": "alert",
+                      "metadata": {
+                        "description": "Alerts when average CPU usage exceeds a threshold.",
+                        "name": "Host CPU high",
+                        "tags": [
+                          "production",
+                          "infra"
+                        ],
+                        "version": 1
+                      },
+                      "query": {
+                        "breach": {
+                          "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                        },
+                        "format": "standalone"
+                      },
+                      "recovery_strategy": "no_breach",
+                      "schedule": {
+                        "every": "1m",
+                        "lookback": "5m"
+                      },
+                      "state_transition": {
+                        "pending_count": 1,
+                        "recovering_count": 1
+                      },
+                      "time_field": "@timestamp",
+                      "updated_at": "2026-01-15T12:00:00.000Z",
+                      "updated_by": "elastic",
+                      "version": "WzAsMV0="
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response"
+                }
+              }
+            },
+            "description": "Returns the newly created rule."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalidRequest": {
+                    "summary": "Missing required rule metadata",
+                    "value": {
+                      "code": "BAD_REQUEST",
+                      "details": {
+                        "errors": {
+                          "metadata": [
+                            "Required"
+                          ]
+                        }
+                      },
+                      "error": "Bad Request",
+                      "message": "metadata: Required"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an invalid schema or parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "summary": "Request was not authenticated",
+                    "value": {
+                      "code": "UNAUTHORIZED",
+                      "error": "Unauthorized",
+                      "message": "Authentication required to access this API."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request was not authenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "summary": "Caller lacks required privileges",
+                    "value": {
+                      "code": "FORBIDDEN",
+                      "error": "Forbidden",
+                      "message": "The current user does not have the required privileges for this request."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the user does not have the required privileges to perform the request."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "internalServerError": {
+                    "summary": "Unexpected server-side error",
+                    "value": {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "error": "Internal Server Error",
+                      "message": "An unexpected error occurred."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an unexpected server-side error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "alertingDisabled": {
+                    "summary": "Alerting V2 is disabled",
+                    "value": {
+                      "code": "ALERTING_DISABLED",
+                      "error": "Service Unavailable",
+                      "message": "Alerting is disabled."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the alerting engine is disabled by the `alerting:v2:enabled` advanced setting."
+          }
+        },
+        "summary": "Create a rule",
+        "tags": [
+          "alerting-v2"
+        ],
+        "x-state": "Experimental",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    },
+    "/api/alerting/v2/rules/{id}": {
+      "delete": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb delete\">delete</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/alerting/v2/rules/{id}</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\n[Required authorization] Route required privileges: manage_alerting-v2-rules.",
+        "operationId": "delete-alerting-v2-rules-id",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The identifier for the rule.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maxLength": 150,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The rule was deleted successfully."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalidRequest": {
+                    "summary": "Indicates an invalid schema or parameters.",
+                    "value": {
+                      "code": "BAD_REQUEST",
+                      "details": {
+                        "errors": {
+                          "errors": [],
+                          "properties": {
+                            "page": {
+                              "errors": [
+                                "Too small: expected number to be >=1"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "error": "Bad Request",
+                      "message": "page: Too small: expected number to be >=1"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request failed schema validation."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "summary": "Request was not authenticated",
+                    "value": {
+                      "code": "UNAUTHORIZED",
+                      "error": "Unauthorized",
+                      "message": "Authentication required to access this API."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request was not authenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "summary": "Caller lacks required privileges",
+                    "value": {
+                      "code": "FORBIDDEN",
+                      "error": "Forbidden",
+                      "message": "The current user does not have the required privileges for this request."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the user does not have the required privileges to perform the request."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleNotFound": {
+                    "summary": "No rule exists for the given ID",
+                    "value": {
+                      "code": "RULE_NOT_FOUND",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Not Found",
+                      "message": "Rule with id \"rule-1\" not found"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates a rule with the given ID does not exist."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "internalServerError": {
+                    "summary": "Unexpected server-side error",
+                    "value": {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "error": "Internal Server Error",
+                      "message": "An unexpected error occurred."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an unexpected server-side error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "alertingDisabled": {
+                    "summary": "Alerting V2 is disabled",
+                    "value": {
+                      "code": "ALERTING_DISABLED",
+                      "error": "Service Unavailable",
+                      "message": "Alerting is disabled."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the alerting engine is disabled by the `alerting:v2:enabled` advanced setting."
+          }
+        },
+        "summary": "Delete a rule",
+        "tags": [
+          "alerting-v2"
+        ],
+        "x-state": "Experimental",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      },
+      "get": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb get\">get</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/alerting/v2/rules/{id}</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\n[Required authorization] Route required privileges: read_alerting-v2-rules.",
+        "operationId": "get-alerting-v2-rules-id",
+        "parameters": [
+          {
+            "description": "The identifier for the rule.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maxLength": 150,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "getRuleResponse": {
+                    "summary": "Retrieved host CPU threshold rule",
+                    "value": {
+                      "created_at": "2026-01-15T12:00:00.000Z",
+                      "created_by": "elastic",
+                      "enabled": true,
+                      "grouping": {
+                        "fields": [
+                          "host.name"
+                        ]
+                      },
+                      "id": "rule-1",
+                      "kind": "alert",
+                      "metadata": {
+                        "description": "Alerts when average CPU usage exceeds a threshold.",
+                        "name": "Host CPU high",
+                        "tags": [
+                          "production",
+                          "infra"
+                        ],
+                        "version": 1
+                      },
+                      "query": {
+                        "breach": {
+                          "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                        },
+                        "format": "standalone"
+                      },
+                      "recovery_strategy": "no_breach",
+                      "schedule": {
+                        "every": "1m",
+                        "lookback": "5m"
+                      },
+                      "state_transition": {
+                        "pending_count": 1,
+                        "recovering_count": 1
+                      },
+                      "time_field": "@timestamp",
+                      "updated_at": "2026-01-15T12:00:00.000Z",
+                      "updated_by": "elastic",
+                      "version": "WzAsMV0="
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response"
+                }
+              }
+            },
+            "description": "Returns the requested rule."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalidRequest": {
+                    "summary": "Indicates an invalid schema or parameters.",
+                    "value": {
+                      "code": "BAD_REQUEST",
+                      "details": {
+                        "errors": {
+                          "errors": [],
+                          "properties": {
+                            "page": {
+                              "errors": [
+                                "Too small: expected number to be >=1"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "error": "Bad Request",
+                      "message": "page: Too small: expected number to be >=1"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request failed schema validation."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "summary": "Request was not authenticated",
+                    "value": {
+                      "code": "UNAUTHORIZED",
+                      "error": "Unauthorized",
+                      "message": "Authentication required to access this API."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request was not authenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "summary": "Caller lacks required privileges",
+                    "value": {
+                      "code": "FORBIDDEN",
+                      "error": "Forbidden",
+                      "message": "The current user does not have the required privileges for this request."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the user does not have the required privileges to perform the request."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleNotFound": {
+                    "summary": "No rule exists for the given ID",
+                    "value": {
+                      "code": "RULE_NOT_FOUND",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Not Found",
+                      "message": "Rule with id \"rule-1\" not found"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates a rule with the given ID does not exist."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "internalServerError": {
+                    "summary": "Unexpected server-side error",
+                    "value": {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "error": "Internal Server Error",
+                      "message": "An unexpected error occurred."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an unexpected server-side error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "alertingDisabled": {
+                    "summary": "Alerting V2 is disabled",
+                    "value": {
+                      "code": "ALERTING_DISABLED",
+                      "error": "Service Unavailable",
+                      "message": "Alerting is disabled."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the alerting engine is disabled by the `alerting:v2:enabled` advanced setting."
+          }
+        },
+        "summary": "Get a rule",
+        "tags": [
+          "alerting-v2"
+        ],
+        "x-state": "Experimental",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      },
+      "patch": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb patch\">patch</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/alerting/v2/rules/{id}</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\n[Required authorization] Route required privileges: manage_alerting-v2-rules.",
+        "operationId": "patch-alerting-v2-rules-id",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The identifier for the rule.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maxLength": 150,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "updateRuleRequest": {
+                  "summary": "Update a rule name and description",
+                  "value": {
+                    "metadata": {
+                      "description": "Updated description.",
+                      "name": "Host CPU high (updated)"
+                    },
+                    "version": "WzAsMV0="
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_update_rule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "updateRuleResponse": {
+                    "summary": "Updated rule metadata",
+                    "value": {
+                      "created_at": "2026-01-15T12:00:00.000Z",
+                      "created_by": "elastic",
+                      "enabled": true,
+                      "grouping": {
+                        "fields": [
+                          "host.name"
+                        ]
+                      },
+                      "id": "rule-1",
+                      "kind": "alert",
+                      "metadata": {
+                        "description": "Updated description.",
+                        "name": "Host CPU high (updated)",
+                        "tags": [
+                          "production",
+                          "infra"
+                        ],
+                        "version": 1
+                      },
+                      "query": {
+                        "breach": {
+                          "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                        },
+                        "format": "standalone"
+                      },
+                      "recovery_strategy": "no_breach",
+                      "schedule": {
+                        "every": "1m",
+                        "lookback": "5m"
+                      },
+                      "state_transition": {
+                        "pending_count": 1,
+                        "recovering_count": 1
+                      },
+                      "time_field": "@timestamp",
+                      "updated_at": "2026-01-15T12:00:00.000Z",
+                      "updated_by": "elastic",
+                      "version": "WzAsMV0="
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response"
+                }
+              }
+            },
+            "description": "Returns the updated rule."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalidRequest": {
+                    "summary": "Update body includes an unrecognized field",
+                    "value": {
+                      "code": "BAD_REQUEST",
+                      "details": {
+                        "errors": {
+                          "unknownField": [
+                            "Unrecognized key"
+                          ]
+                        }
+                      },
+                      "error": "Bad Request",
+                      "message": "Unrecognized key(s) in object: 'unknownField'"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an invalid schema or parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "summary": "Request was not authenticated",
+                    "value": {
+                      "code": "UNAUTHORIZED",
+                      "error": "Unauthorized",
+                      "message": "Authentication required to access this API."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request was not authenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "summary": "Caller lacks required privileges",
+                    "value": {
+                      "code": "FORBIDDEN",
+                      "error": "Forbidden",
+                      "message": "The current user does not have the required privileges for this request."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the user does not have the required privileges to perform the request."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleNotFound": {
+                    "summary": "No rule exists for the given ID",
+                    "value": {
+                      "code": "RULE_NOT_FOUND",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Not Found",
+                      "message": "Rule with id \"rule-1\" not found"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates a rule with the given ID does not exist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleVersionConflict": {
+                    "summary": "Indicates the rule was concurrently updated by another caller.",
+                    "value": {
+                      "code": "RULE_VERSION_CONFLICT",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Conflict",
+                      "message": "Rule with id \"rule-1\" has already been updated by another user"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the rule was concurrently updated by another caller."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "internalServerError": {
+                    "summary": "Unexpected server-side error",
+                    "value": {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "error": "Internal Server Error",
+                      "message": "An unexpected error occurred."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an unexpected server-side error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "alertingDisabled": {
+                    "summary": "Alerting V2 is disabled",
+                    "value": {
+                      "code": "ALERTING_DISABLED",
+                      "error": "Service Unavailable",
+                      "message": "Alerting is disabled."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the alerting engine is disabled by the `alerting:v2:enabled` advanced setting."
+          }
+        },
+        "summary": "Update a rule",
+        "tags": [
+          "alerting-v2"
+        ],
+        "x-state": "Experimental",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      },
+      "put": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb put\">put</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/alerting/v2/rules/{id}</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nCreates a rule with the given identifier, or fully replaces it if one already exists.<br/><br/>[Required authorization] Route required privileges: manage_alerting-v2-rules.",
+        "operationId": "put-alerting-v2-rules-id",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The identifier for the rule.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maxLength": 150,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "upsertRuleRequest": {
+                  "summary": "Create or replace a host CPU threshold rule",
+                  "value": {
+                    "grouping": {
+                      "fields": [
+                        "host.name"
+                      ]
+                    },
+                    "kind": "alert",
+                    "metadata": {
+                      "description": "Alerts when average CPU usage exceeds a threshold.",
+                      "name": "Host CPU high",
+                      "tags": [
+                        "production",
+                        "infra"
+                      ]
+                    },
+                    "query": {
+                      "breach": {
+                        "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                      },
+                      "format": "standalone"
+                    },
+                    "recovery_strategy": "no_breach",
+                    "schedule": {
+                      "every": "1m",
+                      "lookback": "5m"
+                    },
+                    "state_transition": {
+                      "pending_count": 1,
+                      "recovering_count": 1
+                    },
+                    "time_field": "@timestamp"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_new_rule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "upsertRuleReplacedResponse": {
+                    "summary": "Replaced an existing rule",
+                    "value": {
+                      "created_at": "2026-01-15T12:00:00.000Z",
+                      "created_by": "elastic",
+                      "enabled": true,
+                      "grouping": {
+                        "fields": [
+                          "host.name"
+                        ]
+                      },
+                      "id": "rule-1",
+                      "kind": "alert",
+                      "metadata": {
+                        "description": "Alerts when average CPU usage exceeds a threshold.",
+                        "name": "Host CPU high",
+                        "tags": [
+                          "production",
+                          "infra"
+                        ],
+                        "version": 1
+                      },
+                      "query": {
+                        "breach": {
+                          "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                        },
+                        "format": "standalone"
+                      },
+                      "recovery_strategy": "no_breach",
+                      "schedule": {
+                        "every": "1m",
+                        "lookback": "5m"
+                      },
+                      "state_transition": {
+                        "pending_count": 1,
+                        "recovering_count": 1
+                      },
+                      "time_field": "@timestamp",
+                      "updated_at": "2026-01-15T12:00:00.000Z",
+                      "updated_by": "elastic",
+                      "version": "WzAsMV0="
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response"
+                }
+              }
+            },
+            "description": "Returns the replaced rule."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "upsertRuleCreatedResponse": {
+                    "summary": "Created a new rule with the given ID",
+                    "value": {
+                      "created_at": "2026-01-15T12:00:00.000Z",
+                      "created_by": "elastic",
+                      "enabled": true,
+                      "grouping": {
+                        "fields": [
+                          "host.name"
+                        ]
+                      },
+                      "id": "rule-1",
+                      "kind": "alert",
+                      "metadata": {
+                        "description": "Alerts when average CPU usage exceeds a threshold.",
+                        "name": "Host CPU high",
+                        "tags": [
+                          "production",
+                          "infra"
+                        ],
+                        "version": 1
+                      },
+                      "query": {
+                        "breach": {
+                          "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                        },
+                        "format": "standalone"
+                      },
+                      "recovery_strategy": "no_breach",
+                      "schedule": {
+                        "every": "1m",
+                        "lookback": "5m"
+                      },
+                      "state_transition": {
+                        "pending_count": 1,
+                        "recovering_count": 1
+                      },
+                      "time_field": "@timestamp",
+                      "updated_at": "2026-01-15T12:00:00.000Z",
+                      "updated_by": "elastic",
+                      "version": "WzAsMV0="
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response"
+                }
+              }
+            },
+            "description": "Returns the newly created rule."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalidRequest": {
+                    "summary": "Upsert body is missing required rule metadata",
+                    "value": {
+                      "code": "BAD_REQUEST",
+                      "details": {
+                        "errors": {
+                          "metadata": [
+                            "Required"
+                          ]
+                        }
+                      },
+                      "error": "Bad Request",
+                      "message": "metadata: Required"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an invalid schema or parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "summary": "Request was not authenticated",
+                    "value": {
+                      "code": "UNAUTHORIZED",
+                      "error": "Unauthorized",
+                      "message": "Authentication required to access this API."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request was not authenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "summary": "Caller lacks required privileges",
+                    "value": {
+                      "code": "FORBIDDEN",
+                      "error": "Forbidden",
+                      "message": "The current user does not have the required privileges for this request."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the user does not have the required privileges to perform the request."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleNotFound": {
+                    "summary": "No rule exists for the given ID",
+                    "value": {
+                      "code": "RULE_NOT_FOUND",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Not Found",
+                      "message": "Rule with id \"rule-1\" not found"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates a rule with the given ID does not exist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleVersionConflict": {
+                    "summary": "Rule was changed concurrently by another caller",
+                    "value": {
+                      "code": "RULE_VERSION_CONFLICT",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Conflict",
+                      "message": "Rule with id \"rule-1\" has already been updated by another user"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the rule was created or updated concurrently, or the request changes immutable fields."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "internalServerError": {
+                    "summary": "Unexpected server-side error",
+                    "value": {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "error": "Internal Server Error",
+                      "message": "An unexpected error occurred."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an unexpected server-side error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "alertingDisabled": {
+                    "summary": "Alerting V2 is disabled",
+                    "value": {
+                      "code": "ALERTING_DISABLED",
+                      "error": "Service Unavailable",
+                      "message": "Alerting is disabled."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the alerting engine is disabled by the `alerting:v2:enabled` advanced setting."
+          }
+        },
+        "summary": "Create or replace a rule",
+        "tags": [
+          "alerting-v2"
+        ],
+        "x-state": "Experimental",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    },
+    "/api/alerting/v2/rules/{id}/_disable": {
+      "post": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb post\">post</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/alerting/v2/rules/{id}/_disable</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nDisable a rule by identifier.<br/><br/>[Required authorization] Route required privileges: manage_alerting-v2-rules.",
+        "operationId": "post-alerting-v2-rules-id-disable",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The identifier for the rule.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maxLength": 150,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "disableRuleResponse": {
+                    "summary": "Disabled host CPU threshold rule",
+                    "value": {
+                      "created_at": "2026-01-15T12:00:00.000Z",
+                      "created_by": "elastic",
+                      "enabled": false,
+                      "grouping": {
+                        "fields": [
+                          "host.name"
+                        ]
+                      },
+                      "id": "rule-1",
+                      "kind": "alert",
+                      "metadata": {
+                        "description": "Alerts when average CPU usage exceeds a threshold.",
+                        "name": "Host CPU high",
+                        "tags": [
+                          "production",
+                          "infra"
+                        ],
+                        "version": 1
+                      },
+                      "query": {
+                        "breach": {
+                          "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                        },
+                        "format": "standalone"
+                      },
+                      "recovery_strategy": "no_breach",
+                      "schedule": {
+                        "every": "1m",
+                        "lookback": "5m"
+                      },
+                      "state_transition": {
+                        "pending_count": 1,
+                        "recovering_count": 1
+                      },
+                      "time_field": "@timestamp",
+                      "updated_at": "2026-01-15T12:00:00.000Z",
+                      "updated_by": "elastic",
+                      "version": "WzAsMV0="
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response"
+                }
+              }
+            },
+            "description": "Returns the disabled rule."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "invalidRequest": {
+                    "summary": "Indicates an invalid schema or parameters.",
+                    "value": {
+                      "code": "BAD_REQUEST",
+                      "details": {
+                        "errors": {
+                          "errors": [],
+                          "properties": {
+                            "page": {
+                              "errors": [
+                                "Too small: expected number to be >=1"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "error": "Bad Request",
+                      "message": "page: Too small: expected number to be >=1"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request failed schema validation."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "summary": "Request was not authenticated",
+                    "value": {
+                      "code": "UNAUTHORIZED",
+                      "error": "Unauthorized",
+                      "message": "Authentication required to access this API."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request was not authenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "summary": "Caller lacks required privileges",
+                    "value": {
+                      "code": "FORBIDDEN",
+                      "error": "Forbidden",
+                      "message": "The current user does not have the required privileges for this request."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the user does not have the required privileges to perform the request."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleNotFound": {
+                    "summary": "No rule exists for the given ID",
+                    "value": {
+                      "code": "RULE_NOT_FOUND",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Not Found",
+                      "message": "Rule with id \"rule-1\" not found"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates a rule with the given ID does not exist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleVersionConflict": {
+                    "summary": "Indicates the rule was concurrently updated by another caller.",
+                    "value": {
+                      "code": "RULE_VERSION_CONFLICT",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Conflict",
+                      "message": "Rule with id \"rule-1\" has already been updated by another user"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the rule was concurrently updated by another caller."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "internalServerError": {
+                    "summary": "Unexpected server-side error",
+                    "value": {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "error": "Internal Server Error",
+                      "message": "An unexpected error occurred."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an unexpected server-side error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "alertingDisabled": {
+                    "summary": "Alerting V2 is disabled",
+                    "value": {
+                      "code": "ALERTING_DISABLED",
+                      "error": "Service Unavailable",
+                      "message": "Alerting is disabled."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the alerting engine is disabled by the `alerting:v2:enabled` advanced setting."
+          }
+        },
+        "summary": "Disable a rule",
+        "tags": [
+          "alerting-v2"
+        ],
+        "x-state": "Experimental",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    },
+    "/api/alerting/v2/rules/{id}/_enable": {
+      "post": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb post\">post</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/alerting/v2/rules/{id}/_enable</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nEnable a rule by identifier.<br/><br/>[Required authorization] Route required privileges: manage_alerting-v2-rules.",
+        "operationId": "post-alerting-v2-rules-id-enable",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The identifier for the rule.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maxLength": 150,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "enableRuleResponse": {
+                    "summary": "Enabled host CPU threshold rule",
+                    "value": {
+                      "created_at": "2026-01-15T12:00:00.000Z",
+                      "created_by": "elastic",
+                      "enabled": true,
+                      "grouping": {
+                        "fields": [
+                          "host.name"
+                        ]
+                      },
+                      "id": "rule-1",
+                      "kind": "alert",
+                      "metadata": {
+                        "description": "Alerts when average CPU usage exceeds a threshold.",
+                        "name": "Host CPU high",
+                        "tags": [
+                          "production",
+                          "infra"
+                        ],
+                        "version": 1
+                      },
+                      "query": {
+                        "breach": {
+                          "query": "FROM metrics-* | WHERE host.cpu.usage > 0.9 | STATS avg_cpu = AVG(host.cpu.usage) BY host.name"
+                        },
+                        "format": "standalone"
+                      },
+                      "recovery_strategy": "no_breach",
+                      "schedule": {
+                        "every": "1m",
+                        "lookback": "5m"
+                      },
+                      "state_transition": {
+                        "pending_count": 1,
+                        "recovering_count": 1
+                      },
+                      "time_field": "@timestamp",
+                      "updated_at": "2026-01-15T12:00:00.000Z",
+                      "updated_by": "elastic",
+                      "version": "WzAsMV0="
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response"
+                }
+              }
+            },
+            "description": "Returns the enabled rule."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "maxSchedulesPerMinuteExceeded": {
+                    "summary": "Indicates the request is invalid, for example enabling the rule would exceed the configured schedule limit.",
+                    "value": {
+                      "code": "MAX_SCHEDULES_PER_MINUTE_EXCEEDED",
+                      "details": {
+                        "interval": "1m",
+                        "maxScheduledPerMinute": 400
+                      },
+                      "error": "Bad Request",
+                      "message": "Rule schedule of \"1m\" would exceed the limit of 400 rule runs per minute"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request is invalid, for example enabling the rule would exceed the configured schedule limit."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "summary": "Request was not authenticated",
+                    "value": {
+                      "code": "UNAUTHORIZED",
+                      "error": "Unauthorized",
+                      "message": "Authentication required to access this API."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request was not authenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "summary": "Caller lacks required privileges",
+                    "value": {
+                      "code": "FORBIDDEN",
+                      "error": "Forbidden",
+                      "message": "The current user does not have the required privileges for this request."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the user does not have the required privileges to perform the request."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleNotFound": {
+                    "summary": "No rule exists for the given ID",
+                    "value": {
+                      "code": "RULE_NOT_FOUND",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Not Found",
+                      "message": "Rule with id \"rule-1\" not found"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates a rule with the given ID does not exist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleVersionConflict": {
+                    "summary": "Indicates the rule was concurrently updated by another caller.",
+                    "value": {
+                      "code": "RULE_VERSION_CONFLICT",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Conflict",
+                      "message": "Rule with id \"rule-1\" has already been updated by another user"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the rule was concurrently updated by another caller."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "internalServerError": {
+                    "summary": "Unexpected server-side error",
+                    "value": {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "error": "Internal Server Error",
+                      "message": "An unexpected error occurred."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an unexpected server-side error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "alertingDisabled": {
+                    "summary": "Alerting V2 is disabled",
+                    "value": {
+                      "code": "ALERTING_DISABLED",
+                      "error": "Service Unavailable",
+                      "message": "Alerting is disabled."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the alerting engine is disabled by the `alerting:v2:enabled` advanced setting."
+          }
+        },
+        "summary": "Enable a rule",
+        "tags": [
+          "alerting-v2"
+        ],
+        "x-state": "Experimental",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    },
+    "/api/alerting/v2/rules/{id}/_run": {
+      "post": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb post\">post</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/alerting/v2/rules/{id}/_run</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\n[Required authorization] Route required privileges: manage_alerting-v2-rules.",
+        "operationId": "post-alerting-v2-rules-id-run",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The identifier for the rule.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maxLength": 150,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The rule run was triggered successfully."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleDisabled": {
+                    "summary": "Indicates the rule is disabled and cannot be run.",
+                    "value": {
+                      "code": "RULE_DISABLED",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Bad Request",
+                      "message": "Rule with id \"rule-1\" is disabled and cannot be run"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the rule is disabled and cannot be run."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "unauthorized": {
+                    "summary": "Request was not authenticated",
+                    "value": {
+                      "code": "UNAUTHORIZED",
+                      "error": "Unauthorized",
+                      "message": "Authentication required to access this API."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the request was not authenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "forbidden": {
+                    "summary": "Caller lacks required privileges",
+                    "value": {
+                      "code": "FORBIDDEN",
+                      "error": "Forbidden",
+                      "message": "The current user does not have the required privileges for this request."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the user does not have the required privileges to perform the request."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleNotFound": {
+                    "summary": "No rule exists for the given ID",
+                    "value": {
+                      "code": "RULE_NOT_FOUND",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Not Found",
+                      "message": "Rule with id \"rule-1\" not found"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates a rule with the given ID does not exist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ruleAlreadyRunning": {
+                    "summary": "Indicates the rule is already running or the run request conflicted.",
+                    "value": {
+                      "code": "RULE_ALREADY_RUNNING",
+                      "details": {
+                        "rule_id": "rule-1"
+                      },
+                      "error": "Conflict",
+                      "message": "Rule with id \"rule-1\" is already running"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the rule is already running or the run request conflicted."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "internalServerError": {
+                    "summary": "Unexpected server-side error",
+                    "value": {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "error": "Internal Server Error",
+                      "message": "An unexpected error occurred."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates an unexpected server-side error."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "alertingDisabled": {
+                    "summary": "Alerting V2 is disabled",
+                    "value": {
+                      "code": "ALERTING_DISABLED",
+                      "error": "Service Unavailable",
+                      "message": "Alerting is disabled."
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response"
+                }
+              }
+            },
+            "description": "Indicates the alerting engine is disabled by the `alerting:v2:enabled` advanced setting."
+          }
+        },
+        "summary": "Run a rule now",
+        "tags": [
+          "alerting-v2"
+        ],
+        "x-state": "Experimental",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_composed_rule_query": {
+      "additionalProperties": false,
+      "description": "Composed query: a shared base with appendable breach and recovery segments.",
+      "type": "object",
+      "properties": {
+        "base": {
+          "description": "Base ES|QL query. Time filters are applied automatically via the lookback window.",
+          "maxLength": 10000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "breach": {
+          "additionalProperties": false,
+          "description": "Breach detection configuration. Omit to treat every base row as a breach.",
+          "type": "object",
+          "properties": {
+            "segment": {
+              "description": "A clause appended to the end of the rule's ES|QL query. Required in breach blocks.",
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "segment"
+          ]
+        },
+        "format": {
+          "enum": [
+            "composed"
+          ],
+          "type": "string"
+        },
+        "recovery": {
+          "additionalProperties": false,
+          "description": "Recovery query segment. Required when recovery_strategy is \"query\".",
+          "type": "object",
+          "properties": {
+            "segment": {
+              "description": "Appendable ES|QL segment for recovery detection.",
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "segment"
+          ]
+        }
+      },
+      "required": [
+        "format",
+        "base"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_error_response": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "code": {
+          "description": "Stable error code you can branch on, for example `INVALID_SCHEDULE` or `RULE_ALREADY_EXISTS`.",
+          "type": "string"
+        },
+        "details": {
+          "additionalProperties": {},
+          "description": "Optional extra information about the error, for example field validation issues or the `rule_id` when that ID already exists.",
+          "type": "object"
+        },
+        "error": {
+          "description": "A short human-readable summary of the error category (e.g., \"Not Found\", \"Bad Request\"). Subject to change without notice. Do not parse or rely on its content.",
+          "type": "string"
+        },
+        "message": {
+          "description": "A readable explanation of the error. The wording can change without notice. Do not parse this field.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "error",
+        "message"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_new_rule": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "artifacts": {
+          "description": "Optional objects attached to the rule, such as a runbook or a dashboard. Each item has `id`, `type`, and `data`. The shape of `data` depends on `type`. For example, a `runbook` uses `content` and a `dashboard` uses `dashboard_id`. Known types are validated against that shape. Unknown types are stored when `id`, `type`, and `data` are present.",
+          "items": {
+            "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_artifact"
+          },
+          "maxItems": 100,
+          "type": "array"
+        },
+        "grouping": {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_grouping"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "description": "Creates an alert for each matching group and tracks it until it recovers. Use this when you want to detect a problem and notify or automate a response.",
+              "enum": [
+                "alert"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Stores each match as a rule event you can query. Alerts are not created and notifications are not sent.",
+              "enum": [
+                "signal"
+              ],
+              "type": "string"
+            }
+          ],
+          "description": "Whether the rule creates alerts (`alert`) or only stores matching events (`signal`)."
+        },
+        "metadata": {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_metadata"
+        },
+        "no_data_strategy": {
+          "anyOf": [
+            {
+              "description": "Keeps the alert's last status when the rule finds no data.",
+              "enum": [
+                "last_known_status"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Not accepted when creating or updating rules. Do not send this value.",
+              "enum": [
+                "emit"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Marks the alert `inactive` the first time the rule finds no data for the alert.",
+              "enum": [
+                "recover"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Ignores runs where the rule finds no data.",
+              "enum": [
+                "none"
+              ],
+              "type": "string"
+            }
+          ],
+          "description": "How the rule behaves when it finds no data for a group. If you omit this field or set it to `none`, those runs are ignored. If you set `last_known_status` or `recover`, a standalone query (`query.format: standalone`) must include `query.no_data`. A composed query (`query.format: composed`) uses `query.base` to detect whether data is present. The `emit` value is not accepted when creating or updating rules."
+        },
+        "query": {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_query"
+        },
+        "recovery_strategy": {
+          "anyOf": [
+            {
+              "description": "Recovers an alert when the breach query no longer returns matches.",
+              "enum": [
+                "no_breach"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Recovers an alert when a separate recovery query matches. Requires `query.recovery`.",
+              "enum": [
+                "query"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "The rule never marks an alert as `recovered`, even after the breach query stops returning matches.",
+              "enum": [
+                "none"
+              ],
+              "type": "string"
+            }
+          ],
+          "description": "The condition that marks an alert recovered. If omitted or set to `none`, recovery is disabled: the alert stays `active` even after the breach query stops returning matches, and `state_transition.recovering_count` / `recovering_timeframe` are not allowed. Set to `no_breach` to recover when the breach query stops returning matches. Set to `query` only when you also provide `query.recovery`."
+        },
+        "schedule": {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_schedule"
+        },
+        "state_transition": {
+          "additionalProperties": false,
+          "description": "Consecutive-match or time requirements before an alert becomes `active` or `inactive`. Applies only when `kind` is `alert`.",
+          "nullable": true,
+          "type": "object",
+          "properties": {
+            "pending_count": {
+              "description": "Number of consecutive matches required before the alert becomes `active`.",
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "pending_operator": {
+              "description": "The operator that combines `pending_count` and `pending_timeframe`. `AND` requires both. `OR` requires either.",
+              "enum": [
+                "AND",
+                "OR"
+              ],
+              "type": "string"
+            },
+            "pending_timeframe": {
+              "description": "Time window used with `pending_count`, for example `5m` or `15m`.",
+              "maxLength": 32,
+              "type": "string"
+            },
+            "recovering_count": {
+              "description": "Number of consecutive recoveries required before the alert becomes `inactive`.",
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "recovering_operator": {
+              "description": "The operator that combines `recovering_count` and `recovering_timeframe`. `AND` requires both. `OR` requires either.",
+              "enum": [
+                "AND",
+                "OR"
+              ],
+              "type": "string"
+            },
+            "recovering_timeframe": {
+              "description": "Time window used with `recovering_count`, for example `5m` or `15m`.",
+              "maxLength": 32,
+              "type": "string"
+            }
+          }
+        },
+        "time_field": {
+          "default": "@timestamp",
+          "description": "Document field used as the event time when applying the lookback window. Defaults to `@timestamp`.",
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "metadata",
+        "schedule",
+        "query"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_artifact": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "data": {
+          "additionalProperties": {},
+          "description": "Structured artifact data.",
+          "type": "object"
+        },
+        "id": {
+          "description": "Artifact identifier.",
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "type": {
+          "description": "Artifact type.",
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "data"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_grouping": {
+      "additionalProperties": false,
+      "description": "Grouping configuration.",
+      "type": "object",
+      "properties": {
+        "fields": {
+          "description": "Fields to group alerts by, e.g. [\"host.name\", \"service.name\"]. Should match ES|QL GROUP BY fields.",
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "type": "array"
+        }
+      },
+      "required": [
+        "fields"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_list_response": {
+      "additionalProperties": false,
+      "description": "Paginated list of rules.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "description": "The list of rules.",
+          "items": {
+            "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response"
+          },
+          "type": "array"
+        },
+        "page": {
+          "description": "The current page number.",
+          "type": "number"
+        },
+        "per_page": {
+          "description": "The number of rules per page.",
+          "type": "number"
+        },
+        "total": {
+          "description": "The total number of rules matching the query.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "items",
+        "total",
+        "page",
+        "per_page"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_metadata": {
+      "additionalProperties": false,
+      "description": "Rule metadata.",
+      "type": "object",
+      "properties": {
+        "builder_type": {
+          "description": "Identifies the rule builder that authored this rule (e.g. \"threshold\"). Absent for rules authored directly in ES|QL.",
+          "maxLength": 64,
+          "type": "string"
+        },
+        "description": {
+          "description": "Human-readable description of the rule.",
+          "maxLength": 1024,
+          "type": "string"
+        },
+        "name": {
+          "description": "Rule name (must be unique within the space).",
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "owner": {
+          "description": "Owner of the rule.",
+          "maxLength": 256,
+          "type": "string"
+        },
+        "tags": {
+          "description": "Tags for categorization, e.g. [\"production\", \"infra\"].",
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_query": {
+      "description": "Detection query configuration.",
+      "discriminator": {
+        "mapping": {
+          "composed": "#/components/schemas/Kibana_HTTP_APIs_alerting_composed_rule_query",
+          "standalone": "#/components/schemas/Kibana_HTTP_APIs_alerting_standalone_rule_query"
+        },
+        "propertyName": "format"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_composed_rule_query"
+        },
+        {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_standalone_rule_query"
+        }
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "artifacts": {
+          "description": "Optional objects attached to the rule, such as a runbook or a dashboard. Each item has `id`, `type`, and `data`. The shape of `data` depends on `type`. For example, a `runbook` uses `content` and a `dashboard` uses `dashboard_id`. Known types are validated against that shape. Unknown types are stored when `id`, `type`, and `data` are present.",
+          "items": {
+            "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_artifact"
+          },
+          "maxItems": 100,
+          "type": "array"
+        },
+        "created_at": {
+          "description": "ISO timestamp when the rule was created.",
+          "type": "string"
+        },
+        "created_by": {
+          "description": "User who created the rule.",
+          "nullable": true,
+          "type": "string"
+        },
+        "enabled": {
+          "description": "Whether the rule is enabled.",
+          "type": "boolean"
+        },
+        "grouping": {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_grouping"
+        },
+        "id": {
+          "description": "Unique rule identifier.",
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "description": "Creates an alert for each matching group and tracks it until it recovers. Use this when you want to detect a problem and notify or automate a response.",
+              "enum": [
+                "alert"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Stores each match as a rule event you can query. Alerts are not created and notifications are not sent.",
+              "enum": [
+                "signal"
+              ],
+              "type": "string"
+            }
+          ],
+          "description": "Whether the rule creates alerts (`alert`) or only stores matching events (`signal`)."
+        },
+        "metadata": {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response_metadata"
+        },
+        "no_data_strategy": {
+          "anyOf": [
+            {
+              "description": "Keeps the alert's last status when the rule finds no data.",
+              "enum": [
+                "last_known_status"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Not accepted when creating or updating rules. Do not send this value.",
+              "enum": [
+                "emit"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Marks the alert `inactive` the first time the rule finds no data for the alert.",
+              "enum": [
+                "recover"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Ignores runs where the rule finds no data.",
+              "enum": [
+                "none"
+              ],
+              "type": "string"
+            }
+          ],
+          "description": "How the rule behaves when it finds no data for a group. If you omit this field or set it to `none`, those runs are ignored. If you set `last_known_status` or `recover`, a standalone query (`query.format: standalone`) must include `query.no_data`. A composed query (`query.format: composed`) uses `query.base` to detect whether data is present. The `emit` value is not accepted when creating or updating rules."
+        },
+        "query": {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_query"
+        },
+        "recovery_strategy": {
+          "anyOf": [
+            {
+              "description": "Recovers an alert when the breach query no longer returns matches.",
+              "enum": [
+                "no_breach"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Recovers an alert when a separate recovery query matches. Requires `query.recovery`.",
+              "enum": [
+                "query"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "The rule never marks an alert as `recovered`, even after the breach query stops returning matches.",
+              "enum": [
+                "none"
+              ],
+              "type": "string"
+            }
+          ],
+          "description": "The condition that marks an alert recovered. If omitted or set to `none`, recovery is disabled: the alert stays `active` even after the breach query stops returning matches, and `state_transition.recovering_count` / `recovering_timeframe` are not allowed. Set to `no_breach` to recover when the breach query stops returning matches. Set to `query` only when you also provide `query.recovery`."
+        },
+        "schedule": {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_schedule"
+        },
+        "state_transition": {
+          "additionalProperties": false,
+          "description": "Consecutive-match or time requirements before an alert becomes `active` or `inactive`. Applies only when `kind` is `alert`.",
+          "nullable": true,
+          "type": "object",
+          "properties": {
+            "pending_count": {
+              "description": "Number of consecutive matches required before the alert becomes `active`.",
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "pending_operator": {
+              "description": "The operator that combines `pending_count` and `pending_timeframe`. `AND` requires both. `OR` requires either.",
+              "enum": [
+                "AND",
+                "OR"
+              ],
+              "type": "string"
+            },
+            "pending_timeframe": {
+              "description": "Time window used with `pending_count`, for example `5m` or `15m`.",
+              "maxLength": 32,
+              "type": "string"
+            },
+            "recovering_count": {
+              "description": "Number of consecutive recoveries required before the alert becomes `inactive`.",
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "recovering_operator": {
+              "description": "The operator that combines `recovering_count` and `recovering_timeframe`. `AND` requires both. `OR` requires either.",
+              "enum": [
+                "AND",
+                "OR"
+              ],
+              "type": "string"
+            },
+            "recovering_timeframe": {
+              "description": "Time window used with `recovering_count`, for example `5m` or `15m`.",
+              "maxLength": 32,
+              "type": "string"
+            }
+          }
+        },
+        "time_field": {
+          "default": "@timestamp",
+          "description": "Document field used as the event time when applying the lookback window. Defaults to `@timestamp`.",
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "updated_at": {
+          "description": "ISO timestamp when the rule was last updated.",
+          "type": "string"
+        },
+        "updated_by": {
+          "description": "User who last updated the rule.",
+          "nullable": true,
+          "type": "string"
+        },
+        "version": {
+          "description": "The saved object version token of the rule, used for optimistic concurrency control.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "metadata",
+        "schedule",
+        "query",
+        "id",
+        "enabled",
+        "created_by",
+        "created_at",
+        "updated_by",
+        "updated_at"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_response_metadata": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "builder_type": {
+          "description": "Identifies the rule builder that authored this rule (e.g. \"threshold\"). Absent for rules authored directly in ES|QL.",
+          "maxLength": 64,
+          "type": "string"
+        },
+        "description": {
+          "description": "Human-readable description of the rule.",
+          "maxLength": 1024,
+          "type": "string"
+        },
+        "name": {
+          "description": "Rule name (must be unique within the space).",
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "owner": {
+          "description": "Owner of the rule.",
+          "maxLength": 256,
+          "type": "string"
+        },
+        "tags": {
+          "description": "Tags for categorization, e.g. [\"production\", \"infra\"].",
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "type": "array"
+        },
+        "version": {
+          "description": "Monotonically increasing integer number representing a rule configuration version, incremented on every change. Used on generated rule events as `rule.version`.",
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_schedule": {
+      "additionalProperties": false,
+      "description": "Execution schedule configuration.",
+      "type": "object",
+      "properties": {
+        "every": {
+          "description": "Execution interval, e.g. 1m, 5m, 1h.",
+          "maxLength": 32,
+          "type": "string"
+        },
+        "lookback": {
+          "description": "Lookback window for the query, e.g. 5m, 1h. Can also be expressed in ES|QL.",
+          "maxLength": 32,
+          "type": "string"
+        }
+      },
+      "required": [
+        "every"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_standalone_rule_query": {
+      "additionalProperties": false,
+      "description": "Standalone queries: independent full queries for breach, recovery, and no_data.",
+      "type": "object",
+      "properties": {
+        "breach": {
+          "additionalProperties": false,
+          "description": "Breach detection configuration (required).",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Full ES|QL query for breach detection (required).",
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "query"
+          ]
+        },
+        "format": {
+          "enum": [
+            "standalone"
+          ],
+          "type": "string"
+        },
+        "no_data": {
+          "additionalProperties": false,
+          "description": "No-data detection query. Required when no_data_strategy is not \"none\".",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Full ES|QL query that detects presence of data.",
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "query"
+          ]
+        },
+        "recovery": {
+          "additionalProperties": false,
+          "description": "Recovery query. Required when recovery_strategy is \"query\".",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Full ES|QL query for recovery detection.",
+              "maxLength": 10000,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "query"
+          ]
+        }
+      },
+      "required": [
+        "format",
+        "breach"
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_alerting_update_rule": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "artifacts": {
+          "description": "Optional objects attached to the rule, such as a runbook or a dashboard. Each item has `id`, `type`, and `data`. The shape of `data` depends on `type`. For example, a `runbook` uses `content` and a `dashboard` uses `dashboard_id`. Known types are validated against that shape. Unknown types are stored when `id`, `type`, and `data` are present.",
+          "items": {
+            "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_artifact"
+          },
+          "maxItems": 100,
+          "nullable": true,
+          "type": "array"
+        },
+        "grouping": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_grouping"
+            }
+          ],
+          "nullable": true
+        },
+        "metadata": {
+          "additionalProperties": false,
+          "type": "object",
+          "properties": {
+            "builder_type": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "description": {
+              "description": "Human-readable description of the rule.",
+              "maxLength": 1024,
+              "type": "string"
+            },
+            "name": {
+              "description": "Rule name (must be unique within the space).",
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "owner": {
+              "description": "Owner of the rule.",
+              "maxLength": 256,
+              "type": "string"
+            },
+            "tags": {
+              "items": {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "minItems": 1,
+              "nullable": true,
+              "type": "array"
+            }
+          }
+        },
+        "no_data_strategy": {
+          "anyOf": [
+            {
+              "description": "Keeps the alert's last status when the rule finds no data.",
+              "enum": [
+                "last_known_status"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Not accepted when creating or updating rules. Do not send this value.",
+              "enum": [
+                "emit"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Marks the alert `inactive` the first time the rule finds no data for the alert.",
+              "enum": [
+                "recover"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Ignores runs where the rule finds no data.",
+              "enum": [
+                "none"
+              ],
+              "type": "string"
+            }
+          ],
+          "description": "How the rule behaves when it finds no data for a group. If omitted, the existing value is kept. Set to `null` to clear it (those runs are then ignored). If you set `last_known_status` or `recover`, a standalone query (`query.format: standalone`) must include `query.no_data`. A composed query (`query.format: composed`) uses `query.base` to detect whether data is present. The `emit` value is not accepted when creating or updating rules.",
+          "nullable": true
+        },
+        "query": {
+          "$ref": "#/components/schemas/Kibana_HTTP_APIs_alerting_rule_query"
+        },
+        "recovery_strategy": {
+          "anyOf": [
+            {
+              "description": "Recovers an alert when the breach query no longer returns matches.",
+              "enum": [
+                "no_breach"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "Recovers an alert when a separate recovery query matches. Requires `query.recovery`.",
+              "enum": [
+                "query"
+              ],
+              "type": "string"
+            },
+            {
+              "description": "The rule never marks an alert as `recovered`, even after the breach query stops returning matches.",
+              "enum": [
+                "none"
+              ],
+              "type": "string"
+            }
+          ],
+          "description": "The condition that marks an alert recovered. If omitted, the existing value is kept. Set to `null` to clear it (recovery is then disabled). Set to `no_breach` to recover when the breach query stops returning matches. Set to `query` only when you also provide `query.recovery`. With `none`, the alert stays `active`, even after the breach query stops returning matches. `state_transition.recovering_count` and `recovering_timeframe` require an explicit `recovery_strategy` other than `none`.",
+          "nullable": true
+        },
+        "schedule": {
+          "additionalProperties": false,
+          "nullable": true,
+          "type": "object",
+          "properties": {
+            "every": {
+              "description": "Execution interval, e.g. 1m, 5m, 1h.",
+              "maxLength": 32,
+              "type": "string"
+            },
+            "lookback": {
+              "description": "Lookback window for the query, e.g. 5m, 1h. Can also be expressed in ES|QL.",
+              "maxLength": 32,
+              "type": "string"
+            }
+          }
+        },
+        "state_transition": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "description": "Consecutive-match or time requirements before an alert becomes `active` or `inactive`. Applies only when `kind` is `alert`.",
+              "type": "object",
+              "properties": {
+                "pending_count": {
+                  "description": "Number of consecutive matches required before the alert becomes `active`.",
+                  "maximum": 1000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "pending_operator": {
+                  "description": "The operator that combines `pending_count` and `pending_timeframe`. `AND` requires both. `OR` requires either.",
+                  "enum": [
+                    "AND",
+                    "OR"
+                  ],
+                  "type": "string"
+                },
+                "pending_timeframe": {
+                  "description": "Time window used with `pending_count`, for example `5m` or `15m`.",
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "recovering_count": {
+                  "description": "Number of consecutive recoveries required before the alert becomes `inactive`.",
+                  "maximum": 1000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "recovering_operator": {
+                  "description": "The operator that combines `recovering_count` and `recovering_timeframe`. `AND` requires both. `OR` requires either.",
+                  "enum": [
+                    "AND",
+                    "OR"
+                  ],
+                  "type": "string"
+                },
+                "recovering_timeframe": {
+                  "description": "Time window used with `recovering_count`, for example `5m` or `15m`.",
+                  "maxLength": 32,
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "nullable": true
+            }
+          ],
+          "nullable": true
+        },
+        "time_field": {
+          "description": "Document field used as the event time when applying the lookback window. If omitted, the existing value is kept.",
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "version": {
+          "description": "The current version of the rule, used for optimistic concurrency control.",
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    }
+  }
+}

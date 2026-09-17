@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/observability/slos (default space)"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "http": 200,
+      "default_space_slo_count": 59,
+      "default_space_ids_with_svc_prefix": 0,
+      "default_space_ids_with_gitops_prefix": 0,
+      "planned_ids_taken": {
+        "svc-grid-dispatch-availability": false,
+        "svc-grid-dispatch-latency": false,
+        "svc-turbine-telemetry-availability": false,
+        "svc-turbine-telemetry-latency": false
+      },
+      "spaces_checked": 8,
+      "slo_count_all_spaces": 68,
+      "planned_ids_taken_any_space": []
+    }
+  },
+  "note": "SLO ids must be unique across every space of a project; counts and booleans only"
+}

@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/dashboards/gitops-probe-api-dash-ac-update",
+    "body": {
+      "title": "gitops-probe-api access probe",
+      "description": "Temporary probe object. Safe to delete.",
+      "panels": [],
+      "access_control": {
+        "access_mode": "write_restricted"
+      }
+    }
+  },
+  "response": {
+    "status": 500,
+    "body": {
+      "statusCode": 500,
+      "error": "Internal Server Error",
+      "message": "An internal server error occurred. Check Kibana server logs for details."
+    },
+    "elapsed_seconds": 0.28
+  },
+  "note": "Switch an existing dashboard to write_restricted (API key auth)"
+}

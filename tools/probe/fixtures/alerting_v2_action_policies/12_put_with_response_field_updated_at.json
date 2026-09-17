@@ -1,0 +1,43 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/alerting/v2/action_policies/gitops-probe-api-policy",
+    "body": {
+      "name": "gitops-probe-api policy (Phase 0 API probe)",
+      "description": "Temporary probe object. Safe to delete.",
+      "destinations": [
+        {
+          "type": "workflow",
+          "id": "gitops-probe-api-wf"
+        }
+      ],
+      "matcher": {
+        "tags": [
+          "gitops-probe-api-policy-match"
+        ],
+        "expression": "episode_status : \"active\" or episode_status : \"inactive\""
+      },
+      "tags": [
+        "gitops-probe-api"
+      ],
+      "grouping_mode": "per_episode",
+      "throttle": {
+        "strategy": "on_status_change"
+      },
+      "updated_at": "2026-09-17T13:21:00.474Z"
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "code": "BAD_REQUEST",
+      "error": "Bad Request",
+      "message": "[request body]: Unrecognized key: \"updated_at\"",
+      "details": {
+        "source": "body"
+      }
+    },
+    "elapsed_seconds": 0.31
+  },
+  "note": "Round-trip the server field 'updated_at' in PUT"
+}

@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/gitops-probe-api-gates/_doc/gate-grid-dispatch"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "_index": "gitops-probe-api-gates",
+      "_id": "gate-grid-dispatch",
+      "_version": 5,
+      "result": "not_found",
+      "_shards": {
+        "total": 1,
+        "successful": 1,
+        "failed": 0
+      },
+      "_seq_no": 4,
+      "_primary_term": 1
+    },
+    "elapsed_seconds": 0.53
+  }
+}

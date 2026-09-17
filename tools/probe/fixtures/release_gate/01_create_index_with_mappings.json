@@ -1,0 +1,56 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/gitops-probe-api-gates",
+    "body": {
+      "mappings": {
+        "dynamic": "strict",
+        "properties": {
+          "gate_id": {
+            "type": "keyword"
+          },
+          "service": {
+            "type": "keyword"
+          },
+          "window": {
+            "type": "keyword"
+          },
+          "slo_ids": {
+            "type": "keyword"
+          },
+          "noisy_rule_budget": {
+            "type": "integer"
+          },
+          "objectives": {
+            "properties": {
+              "name": {
+                "type": "keyword"
+              },
+              "max": {
+                "type": "double"
+              },
+              "compare_to_base": {
+                "type": "boolean"
+              }
+            }
+          },
+          "managed_by": {
+            "type": "keyword"
+          },
+          "updated_at": {
+            "type": "date"
+          }
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "acknowledged": true,
+      "shards_acknowledged": true,
+      "index": "gitops-probe-api-gates"
+    },
+    "elapsed_seconds": 0.89
+  }
+}

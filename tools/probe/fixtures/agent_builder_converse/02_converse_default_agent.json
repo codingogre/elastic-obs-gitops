@@ -1,0 +1,38 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/agent_builder/converse",
+    "body": {
+      "agent_id": "elastic-ai-agent",
+      "input": "Reply with exactly one word: pong. Do not call any tools."
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "conversation_id": "445b7848-9308-4d88-9e5f-7da42d9dc5e9",
+      "access_control": {
+        "entries": [],
+        "access_mode": "private"
+      },
+      "round_id": "70ce587e-8011-4ee7-8695-5729493611b6",
+      "trace_id": "a47c1529e8545cb4df6c97262904603c",
+      "model_usage": {
+        "llm_calls": 1,
+        "connector_id": ".anthropic-claude-5-sonnet-chat_completion",
+        "output_tokens": 71,
+        "model": "anthropic-claude-5-sonnet",
+        "input_tokens": 16429
+      },
+      "started_at": "2026-09-17T13:31:04.324Z",
+      "time_to_last_token": 4156,
+      "steps": [],
+      "status": "completed",
+      "time_to_first_token": 4145,
+      "response": {
+        "message": "pong"
+      }
+    },
+    "elapsed_seconds": 14.1
+  }
+}

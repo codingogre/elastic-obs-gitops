@@ -1,0 +1,177 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "(several list endpoints, default vs gitops-dev)"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "workflows": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 3,
+        "count_gitops_dev": 0,
+        "default_objects_visible_in_gitops_dev": 0,
+        "gitops_dev_objects_visible_in_default": 0,
+        "extra_default": {
+          "top_keys": [
+            "page",
+            "results",
+            "size",
+            "total"
+          ]
+        },
+        "extra_gitops_dev": {
+          "top_keys": [
+            "page",
+            "results",
+            "size",
+            "total"
+          ]
+        },
+        "overlap_elastic_builtin_ids": [],
+        "overlap_other_count": 0
+      },
+      "agent_builder_tools": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 0,
+        "count_gitops_dev": 0,
+        "default_objects_visible_in_gitops_dev": 0,
+        "gitops_dev_objects_visible_in_default": 0,
+        "extra_default": {
+          "builtin_readonly": 72,
+          "custom": 0
+        },
+        "extra_gitops_dev": {
+          "builtin_readonly": 64,
+          "custom": 0
+        },
+        "overlap_elastic_builtin_ids": [],
+        "overlap_other_count": 0,
+        "probe_tool_created_in_gitops_dev_visible_in_default": false
+      },
+      "agent_builder_agents": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 4,
+        "count_gitops_dev": 1,
+        "default_objects_visible_in_gitops_dev": 1,
+        "gitops_dev_objects_visible_in_default": 1,
+        "extra_default": {
+          "builtin_readonly": 0,
+          "custom": 4
+        },
+        "extra_gitops_dev": {
+          "builtin_readonly": 0,
+          "custom": 1
+        },
+        "overlap_elastic_builtin_ids": [
+          "elastic-ai-agent"
+        ],
+        "overlap_other_count": 0
+      },
+      "agent_builder_skills": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 0,
+        "count_gitops_dev": 0,
+        "default_objects_visible_in_gitops_dev": 0,
+        "gitops_dev_objects_visible_in_default": 0,
+        "extra_default": {
+          "builtin_readonly": 35,
+          "custom": 0
+        },
+        "extra_gitops_dev": {
+          "builtin_readonly": 22,
+          "custom": 0
+        },
+        "overlap_elastic_builtin_ids": [],
+        "overlap_other_count": 0
+      },
+      "alerting_v2_rules": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 1,
+        "count_gitops_dev": 0,
+        "default_objects_visible_in_gitops_dev": 0,
+        "gitops_dev_objects_visible_in_default": 0,
+        "extra_default": {},
+        "extra_gitops_dev": {},
+        "overlap_elastic_builtin_ids": [],
+        "overlap_other_count": 0
+      },
+      "alerting_v2_action_policies": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 1,
+        "count_gitops_dev": 0,
+        "default_objects_visible_in_gitops_dev": 0,
+        "gitops_dev_objects_visible_in_default": 0,
+        "extra_default": {},
+        "extra_gitops_dev": {},
+        "overlap_elastic_builtin_ids": [],
+        "overlap_other_count": 0
+      },
+      "slos": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 59,
+        "count_gitops_dev": 0,
+        "default_objects_visible_in_gitops_dev": 0,
+        "gitops_dev_objects_visible_in_default": 0,
+        "extra_default": {
+          "total": 59
+        },
+        "extra_gitops_dev": {
+          "total": 0
+        },
+        "overlap_elastic_builtin_ids": [],
+        "overlap_other_count": 0
+      },
+      "connectors": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 3,
+        "count_gitops_dev": 0,
+        "default_objects_visible_in_gitops_dev": 0,
+        "gitops_dev_objects_visible_in_default": 0,
+        "extra_default": {
+          "preconfigured": 31,
+          "user_created": 3
+        },
+        "extra_gitops_dev": {
+          "preconfigured": 31,
+          "user_created": 0
+        },
+        "overlap_elastic_builtin_ids": [],
+        "overlap_other_count": 0
+      },
+      "classic_rules": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 71,
+        "count_gitops_dev": 0,
+        "default_objects_visible_in_gitops_dev": 0,
+        "gitops_dev_objects_visible_in_default": 0,
+        "extra_default": {},
+        "extra_gitops_dev": {},
+        "overlap_elastic_builtin_ids": [],
+        "overlap_other_count": 0
+      },
+      "dashboards": {
+        "http_default": 200,
+        "http_gitops_dev": 200,
+        "count_default_space": 136,
+        "count_gitops_dev": 0,
+        "default_objects_visible_in_gitops_dev": 0,
+        "gitops_dev_objects_visible_in_default": 0,
+        "extra_default": {},
+        "extra_gitops_dev": {},
+        "overlap_elastic_builtin_ids": [],
+        "overlap_other_count": 0
+      }
+    }
+  },
+  "note": "Counts only. overlap = objects returned by both spaces' listings."
+}

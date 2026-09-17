@@ -1,0 +1,73 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/alerting/v2/rules",
+    "body": {
+      "kind": "alert",
+      "metadata": {
+        "name": "gitops-probe-api post",
+        "description": "Temporary probe object. Safe to delete.",
+        "tags": [
+          "gitops-probe-api",
+          "probe"
+        ]
+      },
+      "time_field": "@timestamp",
+      "schedule": {
+        "every": "1m",
+        "lookback": "5m"
+      },
+      "query": {
+        "format": "standalone",
+        "breach": {
+          "query": "FROM traces-* | WHERE service.name == \"grid-dispatch\" | STATS n = COUNT(*) | WHERE n > 0"
+        }
+      },
+      "recovery_strategy": "no_breach",
+      "state_transition": {
+        "pending_count": 0,
+        "recovering_count": 0
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "id": "0586a0dc-08c1-4f13-a557-0b851df6c743",
+      "version": "WzY5MDIzMywyXQ==",
+      "kind": "alert",
+      "metadata": {
+        "name": "gitops-probe-api post",
+        "description": "Temporary probe object. Safe to delete.",
+        "tags": [
+          "gitops-probe-api",
+          "probe"
+        ],
+        "version": 1
+      },
+      "time_field": "@timestamp",
+      "schedule": {
+        "every": "1m",
+        "lookback": "5m"
+      },
+      "query": {
+        "format": "standalone",
+        "breach": {
+          "query": "FROM traces-* | WHERE service.name == \"grid-dispatch\" | STATS n = COUNT(*) | WHERE n > 0"
+        }
+      },
+      "recovery_strategy": "no_breach",
+      "state_transition": {
+        "pending_count": 0,
+        "recovering_count": 0
+      },
+      "enabled": true,
+      "created_by": "<redacted>",
+      "created_at": "2026-09-17T13:17:12.317Z",
+      "updated_by": "<redacted>",
+      "updated_at": "2026-09-17T13:17:12.317Z"
+    },
+    "elapsed_seconds": 0.81
+  },
+  "note": "POST create: does the server generate the id?"
+}

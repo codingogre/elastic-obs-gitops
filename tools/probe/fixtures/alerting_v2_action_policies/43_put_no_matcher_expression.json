@@ -1,0 +1,66 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/alerting/v2/action_policies/gitops-probe-api-policy-key",
+    "body": {
+      "name": "gitops-probe-api policy key probe",
+      "description": "Temporary probe object. Safe to delete.",
+      "destinations": [
+        {
+          "type": "workflow",
+          "id": "gitops-probe-api-no-such-wf"
+        }
+      ],
+      "matcher": {
+        "tags": [
+          "gitops-probe-api-never-matches"
+        ],
+        "expression": null
+      },
+      "grouping_mode": "per_episode",
+      "throttle": {
+        "strategy": "on_status_change"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "gitops-probe-api-policy-key",
+      "version": "WzY5MTU4NiwyXQ==",
+      "name": "gitops-probe-api policy key probe",
+      "description": "Temporary probe object. Safe to delete.",
+      "enabled": true,
+      "destinations": [
+        {
+          "type": "workflow",
+          "id": "gitops-probe-api-no-such-wf"
+        }
+      ],
+      "matcher": {
+        "tags": [
+          "gitops-probe-api-never-matches"
+        ],
+        "expression": null
+      },
+      "group_by": null,
+      "tags": null,
+      "grouping_mode": "per_episode",
+      "throttle": {
+        "strategy": "on_status_change",
+        "interval": null
+      },
+      "snoozed_until": null,
+      "auth": {
+        "owner": "<redacted-user>",
+        "created_by_user": true
+      },
+      "created_by": "<redacted>",
+      "created_at": "2026-09-17T13:34:33.266Z",
+      "updated_by": "<redacted>",
+      "updated_at": "2026-09-17T13:34:35.848Z"
+    },
+    "elapsed_seconds": 0.47
+  },
+  "note": "matcher.expression explicitly null"
+}

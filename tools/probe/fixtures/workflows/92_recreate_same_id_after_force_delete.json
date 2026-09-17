@@ -1,0 +1,59 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/workflows/workflow",
+    "body": {
+      "id": "gitops-probe-api-wf",
+      "yaml": "name: gitops-probe-api workflow (Phase 0 API probe)\nenabled: true\ndescription: Temporary probe object. Safe to delete.\ntags:\n  - gitops-probe-api\ntriggers:\n  - type: manual\nsteps:\n  - name: log\n    type: console\n    with:\n      message: gitops-probe-api\n"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "gitops-probe-api-wf",
+      "name": "gitops-probe-api workflow (Phase 0 API probe)",
+      "description": "Temporary probe object. Safe to delete.",
+      "enabled": true,
+      "tags": [
+        "gitops-probe-api"
+      ],
+      "managed": false,
+      "managedBy": null,
+      "definitionHash": null,
+      "originManagedWorkflowId": null,
+      "lifecycle": null,
+      "yaml": "name: gitops-probe-api workflow (Phase 0 API probe)\nenabled: true\ndescription: Temporary probe object. Safe to delete.\ntags:\n  - gitops-probe-api\ntriggers:\n  - type: manual\nsteps:\n  - name: log\n    type: console\n    with:\n      message: gitops-probe-api\n",
+      "definition": {
+        "version": "1",
+        "name": "gitops-probe-api workflow (Phase 0 API probe)",
+        "description": "Temporary probe object. Safe to delete.",
+        "enabled": true,
+        "tags": [
+          "gitops-probe-api"
+        ],
+        "steps": [
+          {
+            "name": "log",
+            "type": "console",
+            "with": {
+              "message": "gitops-probe-api"
+            }
+          }
+        ],
+        "triggers": [
+          {
+            "type": "manual"
+          }
+        ]
+      },
+      "createdBy": "<redacted>",
+      "lastUpdatedBy": "<redacted-user>",
+      "valid": true,
+      "createdAt": "2026-09-17T13:21:23.356Z",
+      "lastUpdatedAt": "2026-09-17T13:21:23.356Z",
+      "version": 1
+    },
+    "elapsed_seconds": 1.14
+  },
+  "note": "Is the id reusable after a hard delete?"
+}

@@ -1,0 +1,61 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/agent_builder/agents"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "top_level_keys": [
+        "results"
+      ],
+      "agent_count": 1,
+      "agent_field_names": [
+        "access_control",
+        "configuration",
+        "created_at",
+        "created_by",
+        "description",
+        "id",
+        "name",
+        "permissions",
+        "readonly",
+        "type",
+        "updated_at",
+        "updated_by"
+      ],
+      "builtin_default_agent": [
+        {
+          "id": "elastic-ai-agent",
+          "type": "chat",
+          "name": "Elastic AI Agent",
+          "description": "The default agent for everyday work across your data and configurations. It has access to all current and future Elastic-built capabilities by default. You can customize it for specific tasks with custom skills, tools, plugins, and connectors.",
+          "access_control": {
+            "access_mode": "public",
+            "entries": []
+          },
+          "created_by": {
+            "username": "<redacted>"
+          },
+          "created_at": "2026-09-17T12:55:51.721Z",
+          "updated_by": {
+            "username": "<redacted>"
+          },
+          "updated_at": "2026-09-17T12:55:51.721Z",
+          "configuration": {
+            "tools": [],
+            "skill_ids": [],
+            "enable_elastic_capabilities": true
+          },
+          "permissions": {
+            "update_agent": true,
+            "update_access_control": false
+          },
+          "readonly": false
+        }
+      ]
+    },
+    "elapsed_seconds": 0.3
+  },
+  "note": "Only the built-in default agent is recorded in full"
+}

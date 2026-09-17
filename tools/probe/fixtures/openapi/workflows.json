@@ -1,0 +1,986 @@
+{
+  "source": "https://raw.githubusercontent.com/elastic/kibana/main/oas_docs/output/kibana.serverless.yaml",
+  "openapi_info_version": "",
+  "paths": {
+    "/api/workflows": {
+      "delete": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb delete\">delete</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/workflows</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nDelete multiple workflows by their IDs.<br/><br/>[Required authorization] Route required privileges: workflowsManagement:delete.",
+        "operationId": "delete-workflows",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "When true, permanently deletes the workflows (hard delete) instead of soft-deleting them. The workflow IDs become available for reuse.",
+            "in": "query",
+            "name": "force",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "bulkDeleteWorkflowsRequestExample": {
+                  "description": "Example request for deleting multiple workflows",
+                  "value": {
+                    "ids": [
+                      "workflow-c3d4e5f6-a7b8-9012-cdef-234567890123",
+                      "workflow-d4e5f6a7-b8c9-0123-defa-345678901234"
+                    ]
+                  }
+                }
+              },
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "description": "Array of workflow IDs to delete.",
+                    "items": {
+                      "description": "Workflow ID to delete.",
+                      "type": "string"
+                    },
+                    "maxItems": 1000,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "bulkDeleteWorkflowsResponseExample": {
+                    "description": "Example response after deleting multiple workflows",
+                    "value": {
+                      "deleted": 2,
+                      "failures": [],
+                      "total": 2
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Indicates a successful response"
+          }
+        },
+        "summary": "Bulk delete workflows",
+        "tags": [
+          "workflows"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "Soft delete (default)",
+            "lang": "curl",
+            "source": "curl \\\n  -X DELETE \"${KIBANA_URL}/api/workflows\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\" \\\n  -H \"kbn-xsrf: true\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"ids\": [\"workflow-c3d4e5f6-a7b8-9012-cdef-234567890123\", \"workflow-d4e5f6a7-b8c9-0123-defa-345678901234\"]\n  }'\n"
+          },
+          {
+            "label": "Hard delete (permanent)",
+            "lang": "curl",
+            "source": "curl \\\n  -X DELETE \"${KIBANA_URL}/api/workflows?force=true\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\" \\\n  -H \"kbn-xsrf: true\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"ids\": [\"workflow-c3d4e5f6-a7b8-9012-cdef-234567890123\", \"workflow-d4e5f6a7-b8c9-0123-defa-345678901234\"]\n  }'\n"
+          },
+          {
+            "lang": "Console",
+            "source": "DELETE kbn://api/workflows\n{\n  \"ids\": [\"workflow-c3d4e5f6-a7b8-9012-cdef-234567890123\", \"workflow-d4e5f6a7-b8c9-0123-defa-345678901234\"]\n}\n"
+          }
+        ],
+        "x-state": "Generally available",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      },
+      "get": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb get\">get</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/workflows</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nRetrieve a paginated list of workflows with optional filtering.<br/><br/>[Required authorization] Route required privileges: workflowsManagement:read. Extended privileges (optional, expand functionality when granted): workflowsManagement:managed:read, workflowsManagement:readExecution, workflowsManagement:managed:readExecution.",
+        "operationId": "get-workflows",
+        "parameters": [
+          {
+            "description": "Free-text search query.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of results per page.",
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Page number.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Filter by enabled state.",
+            "in": "query",
+            "name": "enabled",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "boolean"
+              },
+              "maxItems": 2,
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter by creator.",
+            "in": "query",
+            "name": "createdBy",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000,
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter by tags.",
+            "in": "query",
+            "name": "tags",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000,
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter by managed status. Defaults to \"unmanaged\".",
+            "in": "query",
+            "name": "managed",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "managed",
+                "unmanaged"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "When managed workflows are included, only return managed workflows visible in these contexts.",
+            "in": "query",
+            "name": "visibilityContext",
+            "required": false,
+            "schema": {
+              "items": {
+                "maxLength": 128,
+                "type": "string"
+              },
+              "maxItems": 1000,
+              "type": "array"
+            }
+          },
+          {
+            "description": "Field to sort by.",
+            "in": "query",
+            "name": "sortField",
+            "required": false,
+            "schema": {
+              "enum": [
+                "name",
+                "enabled"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Sort direction.",
+            "in": "query",
+            "name": "sortOrder",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "getWorkflowsResponseExample": {
+                    "description": "Example response returning a paginated list of workflows",
+                    "value": {
+                      "page": 1,
+                      "results": [
+                        {
+                          "createdAt": "2025-11-20T10:30:00.000Z",
+                          "definition": {
+                            "description": "This is a workflow example",
+                            "enabled": true,
+                            "inputs": [
+                              {
+                                "default": "hello world",
+                                "name": "message",
+                                "type": "string"
+                              }
+                            ],
+                            "name": "Example definition",
+                            "steps": [
+                              {
+                                "name": "hello_world_step",
+                                "type": "console",
+                                "with": {
+                                  "message": "{{ inputs.message }}"
+                                }
+                              }
+                            ],
+                            "triggers": [
+                              {
+                                "type": "manual"
+                              }
+                            ]
+                          },
+                          "description": "This is a workflow example",
+                          "enabled": true,
+                          "history": [
+                            {
+                              "duration": 5000,
+                              "finishedAt": "2025-11-20T12:00:05.000Z",
+                              "id": "exec-001",
+                              "startedAt": "2025-11-20T12:00:00.000Z",
+                              "status": "completed",
+                              "workflowId": "workflow-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                              "workflowName": "Example definition"
+                            }
+                          ],
+                          "id": "workflow-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                          "name": "Example definition",
+                          "tags": [
+                            "example"
+                          ],
+                          "valid": true
+                        }
+                      ],
+                      "size": 20,
+                      "total": 1
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Indicates a successful response"
+          }
+        },
+        "summary": "Get workflows",
+        "tags": [
+          "workflows"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "source": "curl \\\n  -X GET \"${KIBANA_URL}/api/workflows?size=20&page=1&sortField=name&sortOrder=asc\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\"\n"
+          },
+          {
+            "lang": "Console",
+            "source": "GET kbn://api/workflows?size=20&page=1&sortField=name&sortOrder=asc\n"
+          }
+        ],
+        "x-state": "Generally available",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      },
+      "post": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb post\">post</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/workflows</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nCreate multiple workflows in a single request. Optionally overwrite existing workflows.<br/><br/>[Required authorization] Route required privileges: workflowsManagement:create AND workflowsManagement:update.",
+        "operationId": "post-workflows",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Whether to overwrite existing workflows.",
+            "in": "query",
+            "name": "overwrite",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "When true, performs a preflight conflict check only. Returns the subset of the supplied workflow IDs that already exist (including soft-deleted tombstones and cross-space documents) without writing anything. The response body is `{ existingIds: string[] }` instead of the normal `{ created, failed }` shape.",
+            "in": "query",
+            "name": "dryRun",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "bulkCreateWorkflowsRequestExample": {
+                  "description": "Example request for creating multiple workflows at once",
+                  "value": {
+                    "workflows": [
+                      {
+                        "yaml": "name: Example definition\nenabled: true\ndescription: This is a workflow example\ntriggers:\n  - type: manual\ninputs:\n  - name: message\n    type: string\n    default: \"hello world\"\nsteps:\n  - name: hello_world_step\n    type: console\n    with:\n      message: \"{{ inputs.message }}\"\n"
+                      },
+                      {
+                        "id": "workflow-b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                        "yaml": "name: Second workflow\nenabled: false\ndescription: Another workflow\ntriggers:\n  - type: manual\nsteps:\n  - name: log_step\n    type: console\n    with:\n      message: \"Hello from second workflow\"\n"
+                      }
+                    ]
+                  }
+                }
+              },
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {
+                  "workflows": {
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "maxLength": 255,
+                          "minLength": 3,
+                          "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+                          "type": "string"
+                        },
+                        "yaml": {
+                          "maxLength": 1048576,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "yaml"
+                      ]
+                    },
+                    "maxItems": 500,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "workflows"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "bulkCreateWorkflowsResponseExample": {
+                    "description": "Example response after creating multiple workflows",
+                    "value": {
+                      "created": [
+                        {
+                          "id": "workflow-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                          "name": "Example definition"
+                        },
+                        {
+                          "id": "workflow-b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                          "name": "Second workflow"
+                        }
+                      ],
+                      "failures": [],
+                      "total": 2
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Indicates a successful response"
+          }
+        },
+        "summary": "Bulk create workflows",
+        "tags": [
+          "workflows"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "source": "curl \\\n  -X POST \"${KIBANA_URL}/api/workflows?overwrite=false\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\" \\\n  -H \"kbn-xsrf: true\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"workflows\": [\n      { \"yaml\": \"name: Example definition\\nenabled: true\\ndescription: This is a workflow example\\ntriggers:\\n  - type: manual\\ninputs:\\n  - name: message\\n    type: string\\n    default: \\\"hello world\\\"\\nsteps:\\n  - name: hello_world_step\\n    type: console\\n    with:\\n      message: \\\"{{ inputs.message }}\\\"\\n\" },\n      { \"id\": \"workflow-b2c3d4e5-f6a7-8901-bcde-f12345678901\", \"yaml\": \"name: Second workflow\\nenabled: false\\ndescription: Another workflow\\ntriggers:\\n  - type: manual\\nsteps:\\n  - name: log_step\\n    type: console\\n    with:\\n      message: \\\"Hello from second workflow\\\"\\n\" }\n    ]\n  }'\n"
+          },
+          {
+            "lang": "Console",
+            "source": "POST kbn://api/workflows?overwrite=false\n{\n  \"workflows\": [\n    { \"yaml\": \"name: Example definition\\nenabled: true\\ndescription: This is a workflow example\\ntriggers:\\n  - type: manual\\ninputs:\\n  - name: message\\n    type: string\\n    default: \\\"hello world\\\"\\nsteps:\\n  - name: hello_world_step\\n    type: console\\n    with:\\n      message: \\\"{{ inputs.message }}\\\"\\n\" },\n    { \"id\": \"workflow-b2c3d4e5-f6a7-8901-bcde-f12345678901\", \"yaml\": \"name: Second workflow\\nenabled: false\\ndescription: Another workflow\\ntriggers:\\n  - type: manual\\nsteps:\\n  - name: log_step\\n    type: console\\n    with:\\n      message: \\\"Hello from second workflow\\\"\\n\" }\n  ]\n}\n"
+          }
+        ],
+        "x-state": "Generally available",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    },
+    "/api/workflows/workflow": {
+      "post": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb post\">post</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/workflows/workflow</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nCreate a new workflow from a YAML definition. The YAML is validated and parsed before the workflow is saved. An optional custom ID can be provided.<br/><br/>[Required authorization] Route required privileges: workflowsManagement:create.",
+        "operationId": "post-workflows-workflow",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "createWorkflowRequestExample": {
+                  "description": "Example request for creating a workflow from a YAML definition",
+                  "value": {
+                    "yaml": "name: Example definition\nenabled: true\ndescription: This is a workflow example\ntriggers:\n  - type: manual\ninputs:\n  - name: message\n    type: string\n    default: \"hello world\"\nsteps:\n  - name: hello_world_step\n    type: console\n    with:\n      message: \"{{ inputs.message }}\"\n"
+                  }
+                },
+                "createWorkflowWithIdRequestExample": {
+                  "description": "Example request for creating a workflow with a custom ID",
+                  "value": {
+                    "id": "workflow-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                    "yaml": "name: Example definition\nenabled: true\ndescription: This is a workflow example\ntriggers:\n  - type: manual\ninputs:\n  - name: message\n    type: string\n    default: \"hello world\"\nsteps:\n  - name: hello_world_step\n    type: console\n    with:\n      message: \"{{ inputs.message }}\"\n"
+                  }
+                }
+              },
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "maxLength": 255,
+                    "minLength": 3,
+                    "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+                    "type": "string"
+                  },
+                  "yaml": {
+                    "maxLength": 1048576,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "yaml"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "createWorkflowResponseExample": {
+                    "description": "Example response returning the created workflow",
+                    "value": {
+                      "createdAt": "2025-11-20T10:30:00.000Z",
+                      "createdBy": "elastic",
+                      "definition": {
+                        "description": "This is a workflow example",
+                        "enabled": true,
+                        "inputs": [
+                          {
+                            "default": "hello world",
+                            "name": "message",
+                            "type": "string"
+                          }
+                        ],
+                        "name": "Example definition",
+                        "steps": [
+                          {
+                            "name": "hello_world_step",
+                            "type": "console",
+                            "with": {
+                              "message": "{{ inputs.message }}"
+                            }
+                          }
+                        ],
+                        "triggers": [
+                          {
+                            "type": "manual"
+                          }
+                        ]
+                      },
+                      "description": "This is a workflow example",
+                      "enabled": true,
+                      "id": "workflow-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                      "lastUpdatedAt": "2025-11-20T10:30:00.000Z",
+                      "lastUpdatedBy": "elastic",
+                      "name": "Example definition",
+                      "valid": true,
+                      "yaml": "name: Example definition\nenabled: true\ndescription: This is a workflow example\ntriggers:\n  - type: manual\ninputs:\n  - name: message\n    type: string\n    default: \"hello world\"\nsteps:\n  - name: hello_world_step\n    type: console\n    with:\n      message: \"{{ inputs.message }}\"\n"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Indicates a successful response"
+          }
+        },
+        "summary": "Create a workflow",
+        "tags": [
+          "workflows"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "source": "curl \\\n  -X POST \"${KIBANA_URL}/api/workflows/workflow\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\" \\\n  -H \"kbn-xsrf: true\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"yaml\": \"name: Example definition\\nenabled: true\\ndescription: This is a workflow example\\ntriggers:\\n  - type: manual\\ninputs:\\n  - name: message\\n    type: string\\n    default: \\\"hello world\\\"\\nsteps:\\n  - name: hello_world_step\\n    type: console\\n    with:\\n      message: \\\"{{ inputs.message }}\\\"\\n\"\n  }'\n"
+          },
+          {
+            "lang": "Console",
+            "source": "POST kbn://api/workflows/workflow\n{\n  \"yaml\": \"name: Example definition\\nenabled: true\\ndescription: This is a workflow example\\ntriggers:\\n  - type: manual\\ninputs:\\n  - name: message\\n    type: string\\n    default: \\\"hello world\\\"\\nsteps:\\n  - name: hello_world_step\\n    type: console\\n    with:\\n      message: \\\"{{ inputs.message }}\\\"\\n\"\n}\n"
+          }
+        ],
+        "x-state": "Generally available",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    },
+    "/api/workflows/workflow/{id}": {
+      "delete": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb delete\">delete</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/workflows/workflow/{id}</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nDelete a single workflow by its ID.<br/><br/>[Required authorization] Route required privileges: workflowsManagement:delete.",
+        "operationId": "delete-workflows-workflow-id",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Workflow ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "When true, permanently deletes the workflow (hard delete) instead of soft-deleting it. The workflow ID becomes available for reuse.",
+            "in": "query",
+            "name": "force",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Indicates a successful response"
+          }
+        },
+        "summary": "Delete a workflow",
+        "tags": [
+          "workflows"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "Soft delete (default)",
+            "lang": "curl",
+            "source": "curl \\\n  -X DELETE \"${KIBANA_URL}/api/workflows/workflow/{id}\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\" \\\n  -H \"kbn-xsrf: true\"\n"
+          },
+          {
+            "label": "Hard delete (permanent)",
+            "lang": "curl",
+            "source": "curl \\\n  -X DELETE \"${KIBANA_URL}/api/workflows/workflow/{id}?force=true\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\" \\\n  -H \"kbn-xsrf: true\"\n"
+          },
+          {
+            "lang": "Console",
+            "source": "DELETE kbn://api/workflows/workflow/{id}\n"
+          }
+        ],
+        "x-state": "Generally available",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      },
+      "get": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb get\">get</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/workflows/workflow/{id}</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nRetrieve a single workflow by its ID.<br/><br/>[Required authorization] Route required privileges: workflowsManagement:read OR workflowsManagement:managed:read.",
+        "operationId": "get-workflows-workflow-id",
+        "parameters": [
+          {
+            "description": "Workflow ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "getWorkflowResponseExample": {
+                    "description": "Example response returning a single workflow",
+                    "value": {
+                      "createdAt": "2025-11-20T10:30:00.000Z",
+                      "createdBy": "elastic",
+                      "definition": {
+                        "description": "This is a workflow example",
+                        "enabled": true,
+                        "inputs": [
+                          {
+                            "default": "hello world",
+                            "name": "message",
+                            "type": "string"
+                          }
+                        ],
+                        "name": "Example definition",
+                        "steps": [
+                          {
+                            "name": "hello_world_step",
+                            "type": "console",
+                            "with": {
+                              "message": "{{ inputs.message }}"
+                            }
+                          }
+                        ],
+                        "triggers": [
+                          {
+                            "type": "manual"
+                          }
+                        ]
+                      },
+                      "description": "This is a workflow example",
+                      "enabled": true,
+                      "id": "workflow-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                      "lastUpdatedAt": "2025-11-21T14:00:00.000Z",
+                      "lastUpdatedBy": "elastic",
+                      "name": "Example definition",
+                      "valid": true,
+                      "yaml": "name: Example definition\nenabled: true\ndescription: This is a workflow example\ntriggers:\n  - type: manual\ninputs:\n  - name: message\n    type: string\n    default: \"hello world\"\nsteps:\n  - name: hello_world_step\n    type: console\n    with:\n      message: \"{{ inputs.message }}\"\n"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Indicates a successful response"
+          }
+        },
+        "summary": "Get a workflow",
+        "tags": [
+          "workflows"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "source": "curl \\\n  -X GET \"${KIBANA_URL}/api/workflows/workflow/{id}\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\"\n"
+          },
+          {
+            "lang": "Console",
+            "source": "GET kbn://api/workflows/workflow/{id}\n"
+          }
+        ],
+        "x-state": "Generally available",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      },
+      "put": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb put\">put</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/workflows/workflow/{id}</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nPartially update an existing workflow. You can update individual fields such as name, description, enabled state, tags, or the YAML definition without providing all fields.<br/><br/>[Required authorization] Route required privileges: workflowsManagement:update.",
+        "operationId": "put-workflows-workflow-id",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Workflow ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "updateWorkflowEnableExample": {
+                  "description": "Example request to enable a workflow and update its tags",
+                  "value": {
+                    "enabled": true,
+                    "tags": [
+                      "production"
+                    ]
+                  }
+                },
+                "updateWorkflowFullExample": {
+                  "description": "Example request to update multiple workflow fields",
+                  "value": {
+                    "description": "Updated workflow description",
+                    "enabled": true,
+                    "name": "Updated example",
+                    "tags": [
+                      "example",
+                      "updated"
+                    ],
+                    "yaml": "name: Updated example\nenabled: true\ndescription: Updated workflow description\ntriggers:\n  - type: manual\ninputs:\n  - name: message\n    type: string\n    default: \"hello world\"\nsteps:\n  - name: hello_world_step\n    type: console\n    with:\n      message: \"{{ inputs.message }}\"\n"
+                  }
+                }
+              },
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {
+                  "description": {
+                    "type": "string"
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "yaml": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "updateWorkflowResponseExample": {
+                    "description": "Example response returning the updated workflow",
+                    "value": {
+                      "enabled": false,
+                      "id": "workflow-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                      "lastUpdatedAt": "2026-03-23T13:38:59.568Z",
+                      "lastUpdatedBy": "elastic",
+                      "valid": true,
+                      "validationErrors": []
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Indicates a successful response"
+          }
+        },
+        "summary": "Update a workflow",
+        "tags": [
+          "workflows"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "source": "curl \\\n  -X PUT \"${KIBANA_URL}/api/workflows/workflow/{id}\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\" \\\n  -H \"kbn-xsrf: true\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"enabled\": true,\n    \"tags\": [\"production\"]\n  }'\n"
+          },
+          {
+            "lang": "Console",
+            "source": "PUT kbn://api/workflows/workflow/{id}\n{\n  \"enabled\": true,\n  \"tags\": [\"production\"]\n}\n"
+          }
+        ],
+        "x-state": "Generally available",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    },
+    "/api/workflows/workflow/{id}/run": {
+      "post": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb post\">post</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/workflows/workflow/{id}/run</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nExecute a workflow by its ID with the provided inputs. The workflow must be enabled and have a valid definition. Returns an execution ID that can be used to monitor progress.<br/><br/>[Required authorization] Route required privileges: workflowsManagement:execute.",
+        "operationId": "post-workflows-workflow-id-run",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Workflow ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "runWorkflowRequestExample": {
+                  "description": "Example request to execute a workflow with inputs",
+                  "value": {
+                    "inputs": {
+                      "message": "hello from the API"
+                    }
+                  }
+                }
+              },
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {
+                  "inputs": {
+                    "additionalProperties": {
+                      "nullable": true
+                    },
+                    "description": "Key-value inputs for the workflow execution.",
+                    "type": "object"
+                  },
+                  "metadata": {
+                    "additionalProperties": {
+                      "nullable": true
+                    },
+                    "description": "Optional metadata for the execution.",
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "inputs"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "runWorkflowResponseExample": {
+                    "description": "Example response returning the execution ID",
+                    "value": {
+                      "workflowExecutionId": "exec-a1b2c3d4-e5f6-7890"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Indicates a successful response"
+          }
+        },
+        "summary": "Run a workflow",
+        "tags": [
+          "workflows"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "source": "curl \\\n  -X POST \"${KIBANA_URL}/api/workflows/workflow/{id}/run\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\" \\\n  -H \"kbn-xsrf: true\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"inputs\": {\n      \"message\": \"hello from the API\"\n    }\n  }'\n"
+          },
+          {
+            "lang": "Console",
+            "source": "POST kbn://api/workflows/workflow/{id}/run\n{\n  \"inputs\": {\n    \"message\": \"hello from the API\"\n  }\n}\n"
+          }
+        ],
+        "x-state": "Generally available",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    }
+  },
+  "components": {}
+}

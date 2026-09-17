@@ -1,0 +1,76 @@
+{
+  "source": "https://raw.githubusercontent.com/elastic/kibana/main/oas_docs/output/kibana.serverless.yaml",
+  "openapi_info_version": "",
+  "paths": {
+    "/api/dashboards": {
+      "get": {
+        "tags": [
+          "Dashboards"
+        ],
+        "summary": "Search dashboards",
+        "operationId": "search-dashboards",
+        "description": "> This documentation is temporarily hosted at a separate location.\n>\n> **[View the full Dashboards API reference →](https://elastic.github.io/dashboards-api-spec/dashboards#tag/Dashboards)**\n",
+        "responses": {
+          "200": {
+            "description": "See the full Dashboards API reference for detailed response schemas."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dashboards"
+        ],
+        "summary": "Create a dashboard",
+        "operationId": "create-dashboard",
+        "description": "> This documentation is temporarily hosted at a separate location.\n>\n> **[View the full Dashboards API reference →](https://elastic.github.io/dashboards-api-spec/dashboards#tag/Dashboards)**\n",
+        "responses": {
+          "200": {
+            "description": "See the full Dashboards API reference for detailed response schemas."
+          }
+        }
+      }
+    },
+    "/api/dashboards/{id}": {
+      "get": {
+        "tags": [
+          "Dashboards"
+        ],
+        "summary": "Get a dashboard",
+        "operationId": "get-dashboard",
+        "description": "> This documentation is temporarily hosted at a separate location.\n>\n> **[View the full Dashboards API reference →](https://elastic.github.io/dashboards-api-spec/dashboards#tag/Dashboards)**\n",
+        "responses": {
+          "200": {
+            "description": "See the full Dashboards API reference for detailed response schemas."
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Dashboards"
+        ],
+        "summary": "Upsert a dashboard",
+        "operationId": "upsert-dashboard",
+        "description": "> This documentation is temporarily hosted at a separate location.\n>\n> **[View the full Dashboards API reference →](https://elastic.github.io/dashboards-api-spec/dashboards#tag/Dashboards)**\n",
+        "responses": {
+          "200": {
+            "description": "See the full Dashboards API reference for detailed response schemas."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Dashboards"
+        ],
+        "summary": "Delete a dashboard",
+        "operationId": "delete-dashboard",
+        "description": "> This documentation is temporarily hosted at a separate location.\n>\n> **[View the full Dashboards API reference →](https://elastic.github.io/dashboards-api-spec/dashboards#tag/Dashboards)**\n",
+        "responses": {
+          "200": {
+            "description": "See the full Dashboards API reference for detailed response schemas."
+          }
+        }
+      }
+    }
+  },
+  "components": {}
+}

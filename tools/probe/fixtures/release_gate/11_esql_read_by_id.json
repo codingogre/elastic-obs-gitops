@@ -1,0 +1,83 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/_query?format=json",
+    "body": {
+      "query": "FROM gitops-probe-api-gates METADATA _id | WHERE _id == \"gate-grid-dispatch\" | KEEP _id, gate_id, service, window, slo_ids, noisy_rule_budget, objectives.name, objectives.max"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "took": 6,
+      "is_partial": false,
+      "completion_time_in_millis": 1789651943031,
+      "documents_found": 1,
+      "values_loaded": 11,
+      "rows_emitted": 11,
+      "bytes_read": 0,
+      "read_nanos": 0,
+      "read_cpu_nanos": 0,
+      "cpu_nanos": 1205624,
+      "start_time_in_millis": 1789651943025,
+      "expiration_time_in_millis": 1790083942852,
+      "columns": [
+        {
+          "name": "_id",
+          "type": "keyword"
+        },
+        {
+          "name": "gate_id",
+          "type": "keyword"
+        },
+        {
+          "name": "service",
+          "type": "keyword"
+        },
+        {
+          "name": "window",
+          "type": "keyword"
+        },
+        {
+          "name": "slo_ids",
+          "type": "keyword"
+        },
+        {
+          "name": "noisy_rule_budget",
+          "type": "integer"
+        },
+        {
+          "name": "objectives.name",
+          "type": "keyword"
+        },
+        {
+          "name": "objectives.max",
+          "type": "double"
+        }
+      ],
+      "values": [
+        [
+          "gate-grid-dispatch",
+          "gate-grid-dispatch",
+          "grid-dispatch",
+          "15m",
+          [
+            "svc-grid-dispatch-availability",
+            "svc-grid-dispatch-latency"
+          ],
+          5,
+          [
+            "error_ratio",
+            "p95_ms"
+          ],
+          [
+            0.02,
+            800.0
+          ]
+        ]
+      ]
+    },
+    "elapsed_seconds": 0.27
+  },
+  "note": "How the release-gate workflow can read a gate by id (ES|QL flattens object arrays into multi-values)"
+}

@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/agent_builder/tools/gitops-probe-api-tool"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "statusCode": 404,
+      "error": "Not Found",
+      "message": "Tool gitops-probe-api-tool not found",
+      "attributes": {}
+    },
+    "elapsed_seconds": 0.28
+  }
+}

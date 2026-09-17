@@ -1,0 +1,68 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/gitops-probe-api-gates",
+    "body": {
+      "mappings": {
+        "dynamic": "strict",
+        "properties": {
+          "gate_id": {
+            "type": "keyword"
+          },
+          "service": {
+            "type": "keyword"
+          },
+          "window": {
+            "type": "keyword"
+          },
+          "slo_ids": {
+            "type": "keyword"
+          },
+          "noisy_rule_budget": {
+            "type": "integer"
+          },
+          "objectives": {
+            "properties": {
+              "name": {
+                "type": "keyword"
+              },
+              "max": {
+                "type": "double"
+              },
+              "compare_to_base": {
+                "type": "boolean"
+              }
+            }
+          },
+          "managed_by": {
+            "type": "keyword"
+          },
+          "updated_at": {
+            "type": "date"
+          }
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "error": {
+        "root_cause": [
+          {
+            "type": "resource_already_exists_exception",
+            "reason": "index [gitops-probe-api-gates/DFVaXEE4RNyCZxgjOvNPqg] already exists",
+            "index_uuid": "DFVaXEE4RNyCZxgjOvNPqg",
+            "index": "gitops-probe-api-gates"
+          }
+        ],
+        "type": "resource_already_exists_exception",
+        "reason": "index [gitops-probe-api-gates/DFVaXEE4RNyCZxgjOvNPqg] already exists",
+        "index_uuid": "DFVaXEE4RNyCZxgjOvNPqg",
+        "index": "gitops-probe-api-gates"
+      },
+      "status": 400
+    },
+    "elapsed_seconds": 0.27
+  }
+}

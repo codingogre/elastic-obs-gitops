@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/s/gitops-dev/api/alerting/v2/rules/gitops-probe-api-rule",
+    "body": {
+      "schedule": {
+        "every": "10m"
+      },
+      "version": "WzEsMV0="
+    }
+  },
+  "response": {
+    "status": 409,
+    "body": {
+      "code": "RULE_VERSION_CONFLICT",
+      "error": "Conflict",
+      "message": "Rule with id \"gitops-probe-api-rule\" has already been updated by another user",
+      "details": {
+        "rule_id": "gitops-probe-api-rule"
+      }
+    },
+    "elapsed_seconds": 0.32
+  }
+}

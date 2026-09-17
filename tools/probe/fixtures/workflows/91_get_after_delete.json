@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/workflows/workflow/gitops-probe-api-wf"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "statusCode": 404,
+      "error": "Not Found",
+      "message": "Workflow not found"
+    },
+    "elapsed_seconds": 0.32
+  }
+}

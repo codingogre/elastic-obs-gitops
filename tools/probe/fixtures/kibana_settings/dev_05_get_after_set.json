@@ -1,0 +1,38 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/internal/kibana/settings"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "settings": {
+        "buildNum": {
+          "userValue": 110817
+        },
+        "isDefaultIndexMigrated": {
+          "userValue": true
+        },
+        "defaultIndex": {
+          "userValue": "gitops-dv-traces"
+        },
+        "dateFormat:dow": {
+          "userValue": "Monday"
+        },
+        "enableESQL": {
+          "isOverridden": true,
+          "userValue": true
+        },
+        "bfetch:disable": {
+          "isOverridden": true,
+          "userValue": true
+        },
+        "labs:dashboard:deferBelowFold": {
+          "isOverridden": true,
+          "userValue": false
+        }
+      }
+    },
+    "elapsed_seconds": 0.29
+  }
+}

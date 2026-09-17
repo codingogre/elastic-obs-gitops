@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/s/gitops-dev/api/alerting/v2/action_policies/gitops-probe-api-policy",
+    "body": {
+      "description": "patched"
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "code": "BAD_REQUEST",
+      "error": "Bad Request",
+      "message": "[request body]: version: Invalid input: expected string, received undefined",
+      "details": {
+        "source": "body"
+      }
+    },
+    "elapsed_seconds": 0.28
+  }
+}

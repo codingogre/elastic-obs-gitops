@@ -1,0 +1,47 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/gitops-probe-api-gates/_doc/gate-grid-dispatch",
+    "body": {
+      "gate_id": "gate-grid-dispatch",
+      "service": "grid-dispatch",
+      "window": "10m",
+      "slo_ids": [
+        "svc-grid-dispatch-availability",
+        "svc-grid-dispatch-latency"
+      ],
+      "objectives": [
+        {
+          "name": "error_ratio",
+          "max": 0.02,
+          "compare_to_base": true
+        },
+        {
+          "name": "p95_ms",
+          "max": 800
+        }
+      ],
+      "noisy_rule_budget": 5,
+      "managed_by": "terraform",
+      "bogus": 1
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "error": {
+        "root_cause": [
+          {
+            "type": "strict_dynamic_mapping_exception",
+            "reason": "[1:327] mapping set to strict, dynamic introduction of [bogus] within [_doc] is not allowed"
+          }
+        ],
+        "type": "strict_dynamic_mapping_exception",
+        "reason": "[1:327] mapping set to strict, dynamic introduction of [bogus] within [_doc] is not allowed"
+      },
+      "status": 400
+    },
+    "elapsed_seconds": 0.26
+  },
+  "note": "dynamic: strict rejects unknown fields"
+}

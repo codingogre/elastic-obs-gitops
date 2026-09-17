@@ -1,0 +1,30 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/internal/security/me"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "http_status_user_profile": 200,
+      "me_keys": [
+        "api_key",
+        "authentication_provider",
+        "authentication_realm",
+        "authentication_type",
+        "elastic_cloud_user",
+        "email",
+        "enabled",
+        "full_name",
+        "http_authentication_scheme",
+        "lookup_realm",
+        "metadata",
+        "roles",
+        "username"
+      ],
+      "authentication_type": "api_key",
+      "has_profile_uid": false
+    }
+  },
+  "note": "Shape only: does the Terraform API key identity carry a user profile (needed as dashboard owner)?"
+}

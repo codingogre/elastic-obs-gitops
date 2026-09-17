@@ -1,0 +1,45 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/alerting/v2/rules/gitops-probe-api-rule"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "gitops-probe-api-rule",
+      "version": "WzY5MDIwNCwyXQ==",
+      "kind": "alert",
+      "metadata": {
+        "name": "gitops-probe-api rule (Phase 0 API probe)",
+        "description": "Temporary probe object. Safe to delete.",
+        "tags": [
+          "gitops-probe-api",
+          "probe"
+        ],
+        "version": 3
+      },
+      "time_field": "@timestamp",
+      "schedule": {
+        "every": "2m",
+        "lookback": "10m"
+      },
+      "query": {
+        "format": "standalone",
+        "breach": {
+          "query": "FROM traces-* | WHERE service.name == \"grid-dispatch\" | STATS n = COUNT(*) | WHERE n > 0"
+        }
+      },
+      "recovery_strategy": "no_breach",
+      "state_transition": {
+        "pending_count": 0,
+        "recovering_count": 0
+      },
+      "enabled": true,
+      "created_by": "<redacted>",
+      "created_at": "2026-09-17T13:16:51.891Z",
+      "updated_by": "<redacted>",
+      "updated_at": "2026-09-17T13:16:55.735Z"
+    },
+    "elapsed_seconds": 0.32
+  }
+}

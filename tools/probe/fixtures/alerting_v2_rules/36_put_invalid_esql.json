@@ -1,0 +1,46 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/alerting/v2/rules/gitops-probe-api-rule",
+    "body": {
+      "kind": "alert",
+      "metadata": {
+        "name": "gitops-probe-api rule (policy probe)",
+        "description": "Temporary probe object. Safe to delete.",
+        "tags": [
+          "gitops-probe-api-policy-match",
+          "gitops-probe-api"
+        ]
+      },
+      "time_field": "@timestamp",
+      "schedule": {
+        "every": "5m",
+        "lookback": "5m"
+      },
+      "query": {
+        "format": "standalone",
+        "breach": {
+          "query": "FROM traces-* | WHER x"
+        }
+      },
+      "recovery_strategy": "no_breach",
+      "state_transition": {
+        "pending_count": 0,
+        "recovering_count": 0
+      }
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "code": "BAD_REQUEST",
+      "error": "Bad Request",
+      "message": "[request body]: query.breach.query: Invalid ES|QL query: SyntaxError: mismatched input 'WHER' expecting {'change_point', 'dedup', 'dense_vector', 'enrich', 'completion', 'dissect', 'eval', 'grok', 'limit', 'rerank', 'sample', 'sort', STATS, 'where', 'uri_parts', 'metrics_info', 'registered_domain', 'ts_info', 'user_agent', 'ts_collapse', 'ip_location', 'fork', 'fuse', 'highlight', 'inline', 'inlinestats', 'lookup', 'left', 'right', 'lookup_\ud83d\ufffd\ufffd\ufffd', 'mmr', 'mv_expand', 'drop', 'keep', 'rename'}",
+      "details": {
+        "source": "body"
+      }
+    },
+    "elapsed_seconds": 0.28
+  },
+  "note": "Syntactically invalid ES|QL"
+}

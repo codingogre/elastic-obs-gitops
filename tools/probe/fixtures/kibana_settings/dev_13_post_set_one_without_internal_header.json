@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/internal/kibana/settings/dateFormat:dow",
+    "body": {
+      "value": "Monday"
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "statusCode": 400,
+      "error": "Bad Request",
+      "message": "uri [/internal/kibana/settings/dateFormat:dow] with method [post] exists but is not available with the current configuration"
+    },
+    "elapsed_seconds": 0.27
+  },
+  "note": "Missing x-elastic-internal-origin"
+}

@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/internal/kibana/global_settings"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "settings": {
+        "alerting:v2:enabled": {
+          "userValue": true
+        }
+      },
+      "all_setting_keys": [
+        "alerting:v2:enabled",
+        "buildNum",
+        "isDefaultIndexMigrated",
+        "observability:streamsContinuousKiExtractionEnabled",
+        "observability:streamsSigEventsTuningConfig"
+      ]
+    },
+    "elapsed_seconds": 0.29
+  },
+  "note": {
+    "headers_sent": [
+      "kbn-xsrf",
+      "Authorization: ApiKey",
+      "x-elastic-internal-origin: Kibana"
+    ],
+    "response_elastic_api_version": null,
+    "recorded": "only alerting:v2:enabled plus the list of global keys that have a user value"
+  }
+}

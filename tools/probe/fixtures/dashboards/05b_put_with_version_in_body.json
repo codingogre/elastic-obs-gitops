@@ -1,0 +1,67 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/dashboards/gitops-probe-api-dashboard",
+    "body": {
+      "title": "gitops-probe-api dashboard (Phase 0 API probe)",
+      "description": "Temporary probe object. Safe to delete.",
+      "time_range": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "type": "markdown",
+          "id": "probe-notes",
+          "grid": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 6
+          },
+          "config": {
+            "content": "## Probe\nTemporary markdown panel.",
+            "settings": {
+              "open_links_in_new_tab": true
+            }
+          }
+        },
+        {
+          "type": "vis",
+          "id": "probe-span-count",
+          "grid": {
+            "x": 24,
+            "y": 0,
+            "w": 24,
+            "h": 6
+          },
+          "config": {
+            "title": "Spans (grid-dispatch)",
+            "type": "metric",
+            "data_source": {
+              "type": "esql",
+              "query": "FROM traces-* | WHERE service.name == \"grid-dispatch\" | STATS spans = COUNT(*)"
+            },
+            "metrics": [
+              {
+                "type": "primary",
+                "column": "spans"
+              }
+            ]
+          }
+        }
+      ],
+      "version": "Wzg1MjcsMl0="
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "statusCode": 400,
+      "error": "Bad Request",
+      "message": "[\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"version\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key: \\\"version\\\"\"\n  }\n]"
+    },
+    "elapsed_seconds": 0.41
+  },
+  "note": "meta.version as a top-level body field"
+}

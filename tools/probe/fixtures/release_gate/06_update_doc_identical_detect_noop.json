@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/gitops-probe-api-gates/_update/gate-grid-dispatch?refresh=wait_for",
+    "body": {
+      "doc": {
+        "gate_id": "gate-grid-dispatch",
+        "service": "grid-dispatch",
+        "window": "10m",
+        "slo_ids": [
+          "svc-grid-dispatch-availability",
+          "svc-grid-dispatch-latency"
+        ],
+        "objectives": [
+          {
+            "name": "error_ratio",
+            "max": 0.02,
+            "compare_to_base": true
+          },
+          {
+            "name": "p95_ms",
+            "max": 800
+          }
+        ],
+        "noisy_rule_budget": 5,
+        "managed_by": "terraform"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "_index": "gitops-probe-api-gates",
+      "_id": "gate-grid-dispatch",
+      "_version": 2,
+      "result": "noop",
+      "_shards": {
+        "total": 0,
+        "successful": 0,
+        "failed": 0
+      },
+      "_seq_no": 1,
+      "_primary_term": 1
+    },
+    "elapsed_seconds": 0.27
+  },
+  "note": "_update with an identical partial doc (detect_noop default true)"
+}

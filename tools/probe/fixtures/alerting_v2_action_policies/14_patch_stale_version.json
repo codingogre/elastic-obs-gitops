@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/s/gitops-dev/api/alerting/v2/action_policies/gitops-probe-api-policy",
+    "body": {
+      "description": "patched",
+      "version": "WzEsMV0="
+    }
+  },
+  "response": {
+    "status": 409,
+    "body": {
+      "code": "ACTION_POLICY_VERSION_CONFLICT",
+      "error": "Conflict",
+      "message": "Action policy with id \"gitops-probe-api-policy\" has already been updated by another user",
+      "details": {
+        "action_policy_id": "gitops-probe-api-policy"
+      }
+    },
+    "elapsed_seconds": 0.37
+  }
+}

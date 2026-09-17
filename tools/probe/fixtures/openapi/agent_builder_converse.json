@@ -1,0 +1,409 @@
+{
+  "source": "https://raw.githubusercontent.com/elastic/kibana/main/oas_docs/output/kibana.serverless.yaml",
+  "openapi_info_version": "",
+  "paths": {
+    "/api/agent_builder/converse": {
+      "post": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb post\">post</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/agent_builder/converse</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nSend a message to an agent and receive a complete response. This synchronous endpoint waits for the agent to fully process your request before returning the final result. Use this for simple chat interactions where you need the complete response. To learn more about agent chat, refer to the [agent chat documentation](https://www.elastic.co/docs/explore-analyze/ai-features/agent-builder/chat).<br/><br/>[Required authorization] Route required privileges: agentBuilder:read.",
+        "operationId": "post-agent-builder-converse",
+        "parameters": [
+          {
+            "description": "A required header to protect against CSRF attacks",
+            "in": "header",
+            "name": "kbn-xsrf",
+            "required": true,
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "conversePublicRequestExample": {
+                  "description": "Example request to create a public conversation",
+                  "value": {
+                    "access_control": {
+                      "access_mode": "public"
+                    },
+                    "agent_id": "elastic-ai-agent",
+                    "connector_id": "my-connector-id",
+                    "input": "What is Elasticsearch?"
+                  }
+                },
+                "converseRequestExample": {
+                  "description": "Example request to send a message to the agent as a part of the conversation",
+                  "value": {
+                    "agent_id": "elastic-ai-agent",
+                    "connector_id": "my-connector-id",
+                    "input": "What is Elasticsearch?"
+                  }
+                },
+                "converseRequestInferenceExample": {
+                  "description": "Example using inference_id (mutually exclusive with connector_id)",
+                  "value": {
+                    "agent_id": "elastic-ai-agent",
+                    "inference_id": "my-inference-endpoint-id",
+                    "input": "What is Elasticsearch?"
+                  }
+                }
+              },
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {
+                  "_execution_mode": {
+                    "description": "define how to execute the agent (local execution or via task_manager)",
+                    "enum": [
+                      "local",
+                      "task_manager"
+                    ],
+                    "type": "string",
+                    "x-state": "Experimental"
+                  },
+                  "access_control": {
+                    "additionalProperties": false,
+                    "description": "Optional conversation access control. Defaults to private.",
+                    "type": "object",
+                    "properties": {
+                      "access_mode": {
+                        "description": "Access mode to apply when creating a new conversation. Set to public to make the conversation visible to other users who can access the underlying agent. This setting is ignored when continuing an existing conversation.",
+                        "enum": [
+                          "private",
+                          "public"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "access_mode"
+                    ],
+                    "x-state": "Technical Preview"
+                  },
+                  "action": {
+                    "deprecated": true,
+                    "description": "Deprecated and ignored. The \"regenerate\" action has been removed; the field is still accepted for backward compatibility.",
+                    "enum": [
+                      "regenerate"
+                    ],
+                    "type": "string"
+                  },
+                  "agent_id": {
+                    "default": "elastic-ai-agent",
+                    "description": "The ID of the agent to chat with. Defaults to the default Elastic AI agent.",
+                    "type": "string"
+                  },
+                  "attachments": {
+                    "description": "Optional attachments to send with the message.",
+                    "items": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "additionalProperties": {
+                            "nullable": true
+                          },
+                          "description": "Payload of the attachment. Required unless `origin` is provided (content is resolved once at send time).",
+                          "type": "object"
+                        },
+                        "description": {
+                          "description": "Human-readable label for the attachment.",
+                          "maxLength": 1024,
+                          "type": "string"
+                        },
+                        "group_id": {
+                          "description": "Stable identifier for the logical group this attachment belongs to. Attachments sharing the same group_id were submitted together as a single logical entity.",
+                          "maxLength": 256,
+                          "type": "string"
+                        },
+                        "hidden": {
+                          "description": "When true, the attachment will not be displayed in the UI.",
+                          "type": "boolean"
+                        },
+                        "id": {
+                          "description": "Optional id for the attachment.",
+                          "type": "string"
+                        },
+                        "origin": {
+                          "description": "Origin string (for example, saved object ID) for by-reference attachments. When provided without `data`, the content is resolved once using the attachment type’s `resolve` hook.",
+                          "type": "string"
+                        },
+                        "type": {
+                          "description": "Type of the attachment.",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ]
+                    },
+                    "type": "array",
+                    "x-state": "Technical Preview"
+                  },
+                  "browser_api_tools": {
+                    "description": "Optional browser API tools to be registered as LLM tools with browser.* namespace. These tools execute on the client side.",
+                    "items": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "properties": {
+                        "description": {
+                          "description": "Description of what the browser API tool does.",
+                          "type": "string"
+                        },
+                        "id": {
+                          "description": "Unique identifier for the browser API tool.",
+                          "type": "string"
+                        },
+                        "schema": {
+                          "description": "JSON Schema defining the tool parameters (JsonSchema7Type).",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "description",
+                        "schema"
+                      ]
+                    },
+                    "type": "array"
+                  },
+                  "configuration_overrides": {
+                    "additionalProperties": false,
+                    "description": "Runtime configuration overrides. These override the stored agent configuration for this execution only.",
+                    "type": "object",
+                    "properties": {
+                      "enable_elastic_capabilities": {
+                        "description": "Whether to enable built-in Elastic skills for this execution.",
+                        "type": "boolean"
+                      },
+                      "instructions": {
+                        "description": "Custom instructions for the agent.",
+                        "type": "string"
+                      },
+                      "skill_ids": {
+                        "description": "Skill IDs to enable for this execution, replacing the stored skill list. Note: only fully restricts the available skill set when enable_elastic_capabilities is also set to false.",
+                        "items": {
+                          "maxLength": 256,
+                          "type": "string"
+                        },
+                        "maxItems": 100,
+                        "type": "array"
+                      },
+                      "tools": {
+                        "description": "Tool selection to enable for this execution.",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "tool_ids": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "tool_ids"
+                          ]
+                        },
+                        "type": "array"
+                      }
+                    }
+                  },
+                  "connector_id": {
+                    "description": "Optional connector ID for the agent to use for model routing. Mutually exclusive with `inference_id`; omit or use only one.",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "conversation_id": {
+                    "description": "Optional existing conversation ID to continue a previous conversation.",
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "execution_id": {
+                    "description": "Optional client-generated execution ID. Provide it to address this execution later (for example, to abort it). Must be unique; defaults to a server-generated ID.",
+                    "type": "string"
+                  },
+                  "inference_id": {
+                    "description": "Optional inference endpoint ID for model routing (public alias for the same internal identifier as `connector_id`). Mutually exclusive with `connector_id`.",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "input": {
+                    "description": "The user input message to send to the agent.",
+                    "type": "string"
+                  },
+                  "project_routing": {
+                    "description": "Cross-project search routing expression resolved from the header project picker, applied to the run's searches. Serverless (CPS) only; ignored elsewhere.",
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  "prompts": {
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "allow": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "allow"
+                          ]
+                        },
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "properties": {
+                            "authorized": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "authorized"
+                          ]
+                        },
+                        {
+                          "additionalProperties": false,
+                          "description": "Answers to an `ask_user_question` prompt; one entry per question, in order.",
+                          "type": "object",
+                          "properties": {
+                            "answers": {
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                  "choice": {
+                                    "items": {
+                                      "type": "number"
+                                    },
+                                    "maxItems": 100,
+                                    "type": "array"
+                                  },
+                                  "custom": {
+                                    "maxLength": 20000,
+                                    "minLength": 1,
+                                    "type": "string"
+                                  },
+                                  "skipped": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              },
+                              "maxItems": 100,
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "answers"
+                          ],
+                          "x-state": "Technical Preview"
+                        }
+                      ]
+                    },
+                    "description": "Use this field to respond to a `confirmation`, `authorization`, or `ask_user_question` prompt. Send an `allow` boolean to answer a `confirmation` prompt, an `authorized` boolean to answer an `authorization` prompt, or an `answers` array (one entry per question) to answer an `ask_user_question` prompt.",
+                    "type": "object"
+                  },
+                  "read_only": {
+                    "description": "When true, the created conversation is presented as read-only in the UI: its history is shown but no message input is offered. This carries no authorization meaning — the conversation can still be continued through the API. This setting is ignored when continuing an existing conversation.",
+                    "type": "boolean",
+                    "x-state": "Technical Preview"
+                  },
+                  "reasoning_level": {
+                    "description": "Reasoning effort level for the LLM. One of: none, minimal, low, medium, high, xhigh. Support depends on the underlying model and provider.",
+                    "enum": [
+                      "none",
+                      "minimal",
+                      "low",
+                      "medium",
+                      "high",
+                      "xhigh"
+                    ],
+                    "type": "string",
+                    "x-state": "Experimental"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "converseResponseExample": {
+                    "description": "Example response containing the chain of events representing a conversation with the agent",
+                    "value": {
+                      "access_control": {
+                        "access_mode": "private"
+                      },
+                      "conversation_id": "696ccd6d-4bff-4b26-a62e-522ccf2dcd16",
+                      "response": {
+                        "message": "Elasticsearch is a distributed, RESTful search and analytics engine capable of addressing a growing number of use cases. As the heart of the Elastic Stack, it centrally stores your data for lightning fast search, fine‑tuned relevancy, and powerful analytics that scale with ease."
+                      },
+                      "steps": [
+                        {
+                          "reasoning": "Searching for official documentation or content that explains what Elasticsearch is",
+                          "type": "reasoning"
+                        },
+                        {
+                          "params": {
+                            "query": "what is elasticsearch definition overview introduction"
+                          },
+                          "progression": [
+                            {
+                              "message": "Selecting the best target for this query"
+                            }
+                          ],
+                          "results": [
+                            {
+                              "data": {
+                                "message": "Could not figure out which index to use"
+                              },
+                              "type": "error"
+                            }
+                          ],
+                          "tool_call_id": "tooluse_shOdUwKIRwC9YhqGzeg0cQ",
+                          "tool_id": "platform.core.search",
+                          "type": "tool_call"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Indicates a successful response"
+          }
+        },
+        "summary": "Send chat message",
+        "tags": [
+          "agent builder"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "source": "curl \\\n  -X POST \"${KIBANA_URL}/api/agent_builder/converse\" \\\n  -H \"Authorization: ApiKey ${API_KEY}\" \\\n  -H \"kbn-xsrf: true\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"input\": \"What is Elasticsearch?\",\n    \"agent_id\": \"elastic-ai-agent\",\n    \"access_control\": {\n      \"access_mode\": \"public\"\n    }\n  }'\n"
+          },
+          {
+            "lang": "Console",
+            "source": "POST kbn://api/agent_builder/converse\n{\n  \"input\": \"What is Elasticsearch?\",\n  \"agent_id\": \"elastic-ai-agent\",\n  \"access_control\": {\n    \"access_mode\": \"public\"\n  }\n}\n"
+          }
+        ],
+        "x-state": "",
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    }
+  },
+  "components": {}
+}

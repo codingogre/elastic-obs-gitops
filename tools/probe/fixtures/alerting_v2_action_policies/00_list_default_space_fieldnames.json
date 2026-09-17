@@ -1,0 +1,39 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/alerting/v2/action_policies"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "top_level_keys": [
+        "items",
+        "page",
+        "per_page",
+        "total"
+      ],
+      "item_count": 1,
+      "item_field_names": [
+        "auth",
+        "created_at",
+        "created_by",
+        "description",
+        "destinations",
+        "enabled",
+        "group_by",
+        "grouping_mode",
+        "id",
+        "matcher",
+        "name",
+        "snoozed_until",
+        "tags",
+        "throttle",
+        "updated_at",
+        "updated_by",
+        "version"
+      ],
+      "note": "Pre-existing policies belong to another demo: only field names are recorded."
+    },
+    "elapsed_seconds": 0.29
+  }
+}

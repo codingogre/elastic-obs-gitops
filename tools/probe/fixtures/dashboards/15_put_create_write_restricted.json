@@ -1,0 +1,69 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/dashboards/gitops-probe-api-dashboard-restricted",
+    "body": {
+      "title": "gitops-probe-api dashboard (Phase 0 API probe) (restricted)",
+      "description": "Temporary probe object. Safe to delete.",
+      "time_range": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "type": "markdown",
+          "id": "probe-notes",
+          "grid": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 6
+          },
+          "config": {
+            "content": "## Probe\nTemporary markdown panel.",
+            "settings": {
+              "open_links_in_new_tab": true
+            }
+          }
+        },
+        {
+          "type": "vis",
+          "id": "probe-span-count",
+          "grid": {
+            "x": 24,
+            "y": 0,
+            "w": 24,
+            "h": 6
+          },
+          "config": {
+            "title": "Spans (grid-dispatch)",
+            "type": "metric",
+            "data_source": {
+              "type": "esql",
+              "query": "FROM traces-* | WHERE service.name == \"grid-dispatch\" | STATS spans = COUNT(*)"
+            },
+            "metrics": [
+              {
+                "type": "primary",
+                "column": "spans"
+              }
+            ]
+          }
+        }
+      ],
+      "access_control": {
+        "access_mode": "write_restricted"
+      }
+    }
+  },
+  "response": {
+    "status": 500,
+    "body": {
+      "statusCode": 500,
+      "error": "Internal Server Error",
+      "message": "An internal server error occurred. Check Kibana server logs for details."
+    },
+    "elapsed_seconds": 0.3
+  },
+  "note": "access_control.access_mode=write_restricted on create"
+}

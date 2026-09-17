@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/workflows/workflow",
+    "body": {
+      "id": "gitops-probe-api-wf",
+      "yaml": "name: gitops-probe-api workflow (Phase 0 API probe)\nenabled: true\ndescription: Temporary probe object. Safe to delete.\ntags:\n  - gitops-probe-api\ntriggers:\n  - type: manual\nsteps:\n  - name: log\n    type: console\n    with:\n      message: gitops-probe-api\n"
+    }
+  },
+  "response": {
+    "status": 409,
+    "body": {
+      "statusCode": 409,
+      "error": "Conflict",
+      "message": "Workflow with id 'gitops-probe-api-wf' already exists"
+    },
+    "elapsed_seconds": 0.58
+  },
+  "note": "Same id again"
+}

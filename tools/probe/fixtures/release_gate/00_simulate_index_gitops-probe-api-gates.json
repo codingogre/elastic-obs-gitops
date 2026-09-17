@@ -1,0 +1,12 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/_index_template/_simulate_index/gitops-probe-api-gates"
+  },
+  "response": {
+    "status": 200,
+    "body": {},
+    "elapsed_seconds": 0.27
+  },
+  "note": "Read-only: which index template (if any) applies to this name"
+}

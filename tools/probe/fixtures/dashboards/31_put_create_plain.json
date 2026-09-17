@@ -1,0 +1,41 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/dashboards/gitops-probe-api-dash-ac-update",
+    "body": {
+      "title": "gitops-probe-api access probe",
+      "description": "Temporary probe object. Safe to delete.",
+      "panels": []
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "id": "gitops-probe-api-dash-ac-update",
+      "data": {
+        "description": "Temporary probe object. Safe to delete.",
+        "options": {
+          "auto_apply_filters": true,
+          "hide_panel_titles": false,
+          "hide_panel_borders": false,
+          "use_margins": true,
+          "sync_colors": false,
+          "sync_tooltips": false,
+          "sync_cursor": true
+        },
+        "tags": [],
+        "title": "gitops-probe-api access probe",
+        "filters": [],
+        "panels": [],
+        "pinned_panels": []
+      },
+      "meta": {
+        "created_at": "2026-09-17T13:24:14.302Z",
+        "managed": false,
+        "updated_at": "2026-09-17T13:24:14.302Z",
+        "version": "Wzg1NDAsMl0="
+      }
+    },
+    "elapsed_seconds": 1.11
+  }
+}

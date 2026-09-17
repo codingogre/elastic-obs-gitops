@@ -1,0 +1,26 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/internal/kibana/global_settings"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "settings": {},
+      "all_setting_keys": [
+        "buildNum",
+        "isDefaultIndexMigrated"
+      ]
+    },
+    "elapsed_seconds": 0.49
+  },
+  "note": {
+    "headers_sent": [
+      "kbn-xsrf",
+      "Authorization: ApiKey",
+      "x-elastic-internal-origin: Kibana"
+    ],
+    "response_elastic_api_version": null,
+    "recorded": "only alerting:v2:enabled plus the list of global keys that have a user value"
+  }
+}

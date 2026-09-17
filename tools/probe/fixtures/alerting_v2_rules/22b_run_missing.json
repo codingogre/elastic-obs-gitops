@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/alerting/v2/rules/gitops-probe-api-missing/_run"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "code": "RULE_NOT_FOUND",
+      "error": "Not Found",
+      "message": "Rule with id \"gitops-probe-api-missing\" not found",
+      "details": {
+        "rule_id": "gitops-probe-api-missing"
+      }
+    },
+    "elapsed_seconds": 0.3
+  }
+}

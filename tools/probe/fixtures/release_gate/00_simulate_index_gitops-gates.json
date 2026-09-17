@@ -1,0 +1,57 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/_index_template/_simulate_index/gitops-gates"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "template": {
+        "settings": {},
+        "mappings": {
+          "dynamic": "false",
+          "properties": {
+            "description": {
+              "type": "text"
+            },
+            "gate_id": {
+              "type": "keyword"
+            },
+            "noisy_rule_budget": {
+              "type": "long"
+            },
+            "objectives": {
+              "properties": {
+                "compare_to_baseline": {
+                  "type": "boolean"
+                },
+                "max": {
+                  "type": "double"
+                },
+                "name": {
+                  "type": "keyword"
+                }
+              }
+            },
+            "service": {
+              "type": "keyword"
+            },
+            "slo_ids": {
+              "type": "keyword"
+            },
+            "updated_at": {
+              "type": "date"
+            },
+            "window": {
+              "type": "keyword"
+            }
+          }
+        },
+        "aliases": {}
+      },
+      "overlapping": []
+    },
+    "elapsed_seconds": 0.28
+  },
+  "note": "Read-only: which index template (if any) applies to this name"
+}

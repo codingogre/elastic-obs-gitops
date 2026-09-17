@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/s/gitops-dev/api/agent_builder/tools/gitops-probe-api-tool"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "success": true
+    },
+    "elapsed_seconds": 3.1
+  }
+}

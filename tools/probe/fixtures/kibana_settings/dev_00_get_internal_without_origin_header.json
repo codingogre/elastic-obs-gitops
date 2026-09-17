@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/internal/kibana/global_settings"
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "statusCode": 400,
+      "error": "Bad Request",
+      "message": "uri [/internal/kibana/global_settings] with method [get] exists but is not available with the current configuration"
+    },
+    "elapsed_seconds": 0.26
+  }
+}

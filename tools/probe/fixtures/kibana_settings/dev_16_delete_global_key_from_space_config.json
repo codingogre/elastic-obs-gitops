@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/s/gitops-dev/internal/kibana/settings/alerting:v2:enabled"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "settings": {
+        "buildNum": {
+          "userValue": 110817
+        },
+        "isDefaultIndexMigrated": {
+          "userValue": true
+        },
+        "defaultIndex": {
+          "userValue": "gitops-dv-traces"
+        },
+        "enableESQL": {
+          "isOverridden": true,
+          "userValue": true
+        },
+        "bfetch:disable": {
+          "isOverridden": true,
+          "userValue": true
+        },
+        "labs:dashboard:deferBelowFold": {
+          "isOverridden": true,
+          "userValue": false
+        }
+      }
+    },
+    "elapsed_seconds": 0.55
+  },
+  "note": "Removes the space-level copy written by dev_14; the global value must stay unchanged"
+}

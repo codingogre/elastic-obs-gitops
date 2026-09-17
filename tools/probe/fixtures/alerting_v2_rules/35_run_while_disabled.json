@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/alerting/v2/rules/gitops-probe-api-rule/_run"
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "code": "RULE_DISABLED",
+      "error": "Bad Request",
+      "message": "Rule with id \"gitops-probe-api-rule\" is disabled and cannot be run",
+      "details": {
+        "rule_id": "gitops-probe-api-rule"
+      }
+    },
+    "elapsed_seconds": 0.29
+  }
+}

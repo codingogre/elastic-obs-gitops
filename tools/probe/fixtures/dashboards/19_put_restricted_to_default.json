@@ -1,0 +1,153 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/dashboards/gitops-probe-api-dashboard-restricted",
+    "body": {
+      "title": "gitops-probe-api dashboard (Phase 0 API probe) (restricted v4)",
+      "description": "Temporary probe object. Safe to delete.",
+      "time_range": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "type": "markdown",
+          "id": "probe-notes",
+          "grid": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 6
+          },
+          "config": {
+            "content": "## Probe\nTemporary markdown panel.",
+            "settings": {
+              "open_links_in_new_tab": true
+            }
+          }
+        },
+        {
+          "type": "vis",
+          "id": "probe-span-count",
+          "grid": {
+            "x": 24,
+            "y": 0,
+            "w": 24,
+            "h": 6
+          },
+          "config": {
+            "title": "Spans (grid-dispatch)",
+            "type": "metric",
+            "data_source": {
+              "type": "esql",
+              "query": "FROM traces-* | WHERE service.name == \"grid-dispatch\" | STATS spans = COUNT(*)"
+            },
+            "metrics": [
+              {
+                "type": "primary",
+                "column": "spans"
+              }
+            ]
+          }
+        }
+      ],
+      "access_control": {
+        "access_mode": "default"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "gitops-probe-api-dashboard-restricted",
+      "data": {
+        "description": "Temporary probe object. Safe to delete.",
+        "options": {
+          "auto_apply_filters": true,
+          "hide_panel_titles": false,
+          "hide_panel_borders": false,
+          "use_margins": true,
+          "sync_colors": false,
+          "sync_tooltips": false,
+          "sync_cursor": true
+        },
+        "tags": [],
+        "time_range": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "title": "gitops-probe-api dashboard (Phase 0 API probe) (restricted v4)",
+        "filters": [],
+        "panels": [
+          {
+            "grid": {
+              "x": 0,
+              "y": 0,
+              "w": 24,
+              "h": 6
+            },
+            "config": {
+              "content": "## Probe\nTemporary markdown panel.",
+              "settings": {
+                "open_links_in_new_tab": true
+              }
+            },
+            "id": "probe-notes",
+            "type": "markdown"
+          },
+          {
+            "grid": {
+              "x": 24,
+              "y": 0,
+              "w": 24,
+              "h": 6
+            },
+            "config": {
+              "type": "metric",
+              "title": "Spans (grid-dispatch)",
+              "sampling": 1,
+              "ignore_global_filters": false,
+              "data_source": {
+                "type": "esql",
+                "query": "FROM traces-* | WHERE service.name == \"grid-dispatch\" | STATS spans = COUNT(*)"
+              },
+              "styling": {
+                "density": "default",
+                "primary": {
+                  "position": "bottom",
+                  "labels": {
+                    "alignment": "left"
+                  },
+                  "value": {
+                    "alignment": "right",
+                    "sizing": "auto"
+                  }
+                }
+              },
+              "metrics": [
+                {
+                  "column": "spans",
+                  "type": "primary",
+                  "color": {
+                    "type": "auto"
+                  }
+                }
+              ]
+            },
+            "id": "probe-span-count",
+            "type": "vis"
+          }
+        ],
+        "pinned_panels": []
+      },
+      "meta": {
+        "created_at": "2026-09-17T13:23:40.226Z",
+        "managed": false,
+        "updated_at": "2026-09-17T13:23:41.690Z",
+        "version": "Wzg1MzUsMl0="
+      }
+    },
+    "elapsed_seconds": 0.74
+  },
+  "note": "Switch access_mode back to default"
+}

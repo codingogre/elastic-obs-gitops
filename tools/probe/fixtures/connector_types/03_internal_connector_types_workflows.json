@@ -1,0 +1,38 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/internal/actions/connector_types"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "total_types_internal": 110,
+      "types_only_in_internal_listing": [
+        ".cases",
+        ".http-system",
+        ".observability-ai-assistant",
+        ".workflows"
+      ],
+      "workflow_related": [
+        {
+          "id": ".workflows",
+          "name": "Workflows",
+          "enabled": true,
+          "enabled_in_config": true,
+          "enabled_in_license": true,
+          "minimum_license_required": "gold",
+          "supported_feature_ids": [
+            "alerting",
+            "siem"
+          ],
+          "is_system_action_type": true,
+          "source": "stack",
+          "is_deprecated": false,
+          "allow_multiple_system_actions": true,
+          "is_testable": false
+        }
+      ]
+    },
+    "elapsed_seconds": 0.45
+  }
+}

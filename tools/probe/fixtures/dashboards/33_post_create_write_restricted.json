@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/dashboards",
+    "body": {
+      "title": "gitops-probe-api access probe",
+      "description": "Temporary probe object. Safe to delete.",
+      "panels": [],
+      "access_control": {
+        "access_mode": "write_restricted"
+      }
+    }
+  },
+  "response": {
+    "status": 500,
+    "body": {
+      "statusCode": 500,
+      "error": "Internal Server Error",
+      "message": "An internal server error occurred. Check Kibana server logs for details."
+    },
+    "elapsed_seconds": 0.29
+  },
+  "note": "POST create with write_restricted (API key auth)"
+}

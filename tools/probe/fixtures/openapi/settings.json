@@ -1,0 +1,6 @@
+{
+  "source": "https://raw.githubusercontent.com/elastic/kibana/main/oas_docs/output/kibana.serverless.yaml",
+  "openapi_info_version": "",
+  "paths": {},
+  "components": {}
+}

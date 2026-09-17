@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/s/gitops-dev/api/alerting/v2/rules/gitops-probe-api-rule"
+  },
+  "response": {
+    "status": 204,
+    "body": null,
+    "elapsed_seconds": 1.12
+  }
+}

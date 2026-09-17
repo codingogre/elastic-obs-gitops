@@ -1,0 +1,49 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/alerting/v2/rules"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "top_level_keys": [
+        "items",
+        "page",
+        "per_page",
+        "total"
+      ],
+      "total": 1,
+      "item_count": 1,
+      "item_field_paths": [
+        "created_at",
+        "created_by",
+        "enabled",
+        "id",
+        "kind",
+        "metadata",
+        "metadata.description",
+        "metadata.name",
+        "metadata.tags",
+        "metadata.version",
+        "query",
+        "query.breach",
+        "query.breach.query",
+        "query.format",
+        "recovery_strategy",
+        "schedule",
+        "schedule.every",
+        "schedule.lookback",
+        "state_transition",
+        "state_transition.pending_count",
+        "state_transition.recovering_count",
+        "time_field",
+        "updated_at",
+        "updated_by",
+        "version"
+      ],
+      "contains_probe_rule": false,
+      "note": "Pre-existing rules belong to another demo: only field names are recorded."
+    },
+    "elapsed_seconds": 0.29
+  }
+}

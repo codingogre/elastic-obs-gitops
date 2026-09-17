@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/actions/connectors"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "system_action_connectors": [],
+      "workflow_related_connectors": []
+    },
+    "elapsed_seconds": 0.43
+  },
+  "note": "Preconfigured system connectors are the same in every space"
+}

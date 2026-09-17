@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/alerting/v2/action_policies"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "per_page": 20
+    },
+    "elapsed_seconds": 0.28
+  }
+}

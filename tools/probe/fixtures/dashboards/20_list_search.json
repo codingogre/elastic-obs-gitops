@@ -1,0 +1,90 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/dashboards?query=gitops-probe-api&per_page=20"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "id": "gitops-probe-api-dashboard",
+          "data": {
+            "description": "Temporary probe object. Safe to delete.",
+            "tags": [],
+            "time_range": {
+              "from": "now-1h",
+              "to": "now"
+            },
+            "title": "gitops-probe-api dashboard (Phase 0 API probe)"
+          },
+          "meta": {
+            "created_at": "2026-09-17T13:23:29.425Z",
+            "managed": false,
+            "updated_at": "2026-09-17T13:23:37.004Z",
+            "version": "Wzg1MzEsMl0="
+          }
+        },
+        {
+          "id": "23bdae75-2731-4f98-a029-3c404aa82977",
+          "data": {
+            "description": "Temporary probe object. Safe to delete.",
+            "tags": [],
+            "time_range": {
+              "from": "now-1h",
+              "to": "now"
+            },
+            "title": "gitops-probe-api dashboard (Phase 0 API probe) (POST)"
+          },
+          "meta": {
+            "created_at": "2026-09-17T13:23:37.882Z",
+            "managed": false,
+            "updated_at": "2026-09-17T13:23:37.882Z",
+            "version": "Wzg1MzIsMl0="
+          }
+        },
+        {
+          "id": "5f0c7a52-3b8e-4f2e-9a61-0d7c1e2b9a01",
+          "data": {
+            "description": "Temporary probe object. Safe to delete.",
+            "tags": [],
+            "time_range": {
+              "from": "now-1h",
+              "to": "now"
+            },
+            "title": "gitops-probe-api dashboard (Phase 0 API probe) (uuid)"
+          },
+          "meta": {
+            "created_at": "2026-09-17T13:23:38.621Z",
+            "managed": false,
+            "updated_at": "2026-09-17T13:23:38.621Z",
+            "version": "Wzg1MzMsMl0="
+          }
+        },
+        {
+          "id": "gitops-probe-api-dashboard-restricted",
+          "data": {
+            "description": "Temporary probe object. Safe to delete.",
+            "tags": [],
+            "time_range": {
+              "from": "now-1h",
+              "to": "now"
+            },
+            "title": "gitops-probe-api dashboard (Phase 0 API probe) (restricted v4)"
+          },
+          "meta": {
+            "created_at": "2026-09-17T13:23:40.226Z",
+            "managed": false,
+            "updated_at": "2026-09-17T13:23:41.690Z",
+            "version": "Wzg1MzUsMl0="
+          }
+        }
+      ],
+      "meta": {
+        "total": 4,
+        "page": 1,
+        "per_page": 20
+      }
+    }
+  }
+}

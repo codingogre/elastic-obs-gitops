@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/agent_builder/conversations/445b7848-9308-4d88-9e5f-7da42d9dc5e9"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "statusCode": 404,
+      "error": "Not Found",
+      "message": "Conversation 445b7848-9308-4d88-9e5f-7da42d9dc5e9 not found",
+      "attributes": {}
+    },
+    "elapsed_seconds": 0.38
+  }
+}

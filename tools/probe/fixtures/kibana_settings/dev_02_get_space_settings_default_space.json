@@ -1,0 +1,26 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/internal/kibana/settings"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "settings": {},
+      "all_setting_keys": [
+        "agentBuilder:experimentalFeatures",
+        "bfetch:disable",
+        "buildNum",
+        "defaultIndex",
+        "enableESQL",
+        "genAiSettings:tokenUsageTracking",
+        "isDefaultIndexMigrated",
+        "labs:dashboard:deferBelowFold",
+        "observability:streamsEnableQueryStreams",
+        "workflows:ui:showManagedWorkflows"
+      ]
+    },
+    "elapsed_seconds": 0.28
+  },
+  "note": "Default space of the shared project: only the probed keys and key names are recorded"
+}

@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/workflows/workflow/gitops-probe-api-wf",
+    "body": {
+      "enabled": false
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "gitops-probe-api-wf",
+      "lastUpdatedAt": "2026-09-17T13:21:13.646Z",
+      "lastUpdatedBy": "<redacted-user>",
+      "enabled": false,
+      "validationErrors": [],
+      "valid": true
+    },
+    "elapsed_seconds": 0.61
+  },
+  "note": "PUT with only enabled=false"
+}

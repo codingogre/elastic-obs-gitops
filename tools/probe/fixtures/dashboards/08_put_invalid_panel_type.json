@@ -1,0 +1,77 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/dashboards/gitops-probe-api-dashboard",
+    "body": {
+      "title": "gitops-probe-api dashboard (Phase 0 API probe)",
+      "description": "Temporary probe object. Safe to delete.",
+      "time_range": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "type": "markdown",
+          "id": "probe-notes",
+          "grid": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 6
+          },
+          "config": {
+            "content": "## Probe\nTemporary markdown panel.",
+            "settings": {
+              "open_links_in_new_tab": true
+            }
+          }
+        },
+        {
+          "type": "vis",
+          "id": "probe-span-count",
+          "grid": {
+            "x": 24,
+            "y": 0,
+            "w": 24,
+            "h": 6
+          },
+          "config": {
+            "title": "Spans (grid-dispatch)",
+            "type": "metric",
+            "data_source": {
+              "type": "esql",
+              "query": "FROM traces-* | WHERE service.name == \"grid-dispatch\" | STATS spans = COUNT(*)"
+            },
+            "metrics": [
+              {
+                "type": "primary",
+                "column": "spans"
+              }
+            ]
+          }
+        },
+        {
+          "type": "not_a_panel_type",
+          "id": "bad",
+          "grid": {
+            "x": 0,
+            "y": 6,
+            "w": 12,
+            "h": 4
+          },
+          "config": {}
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "statusCode": 400,
+      "error": "Bad Request",
+      "message": "[\n  {\n    \"code\": \"invalid_union\",\n    \"errors\": [\n      [\n        {\n          \"code\": \"invalid_union\",\n          \"errors\": [],\n          \"note\": \"No matching discriminator\",\n          \"discriminator\": \"type\",\n          \"options\": [\n            \"ml_anomaly_charts\",\n            \"ml_anomaly_swimlane\",\n            \"apm_service_map\",\n            \"aiops_change_point_chart\",\n            \"custom_content\",\n            \"discover_session\",\n            \"esql_control\",\n            \"field_stats_table\",\n            \"image\",\n            \"links\",\n            \"aiops_log_rate_analysis\",\n            \"markdown\",\n            \"options_list_control\",\n            \"aiops_pattern_analysis\",\n            \"range_slider_control\",\n            \"ml_single_metric_viewer\",\n            \"slo_alerts\",\n            \"slo_burn_rate\",\n            \"slo_error_budget\",\n            \"slo_overview\",\n            \"synthetics_monitors\",\n            \"synthetics_stats_overview\",\n            \"time_slider_control\",\n            \"vis\"\n          ],\n          \"path\": [\n            \"type\"\n          ],\n          \"message\": \"Invalid discriminator value. Expected 'ml_anomaly_charts' | 'ml_anomaly_swimlane' | 'apm_service_map' | 'aiops_change_point_chart' | 'custom_content' | 'discover_session' | 'esql_control' | 'field_stats_table' | 'image' | 'links' | 'aiops_log_rate_analysis' | 'markdown' | 'options_list_control' | 'aiops_pattern_analysis' | 'range_slider_control' | 'ml_single_metric_viewer' | 'slo_alerts' | 'slo_burn_rate' | 'slo_error_budget' | 'slo_overview' | 'synthetics_monitors' | 'synthetics_stats_overview' | 'time_slider_control' | 'vis'\"\n        }\n      ],\n      [\n        {\n          \"expected\": \"string\",\n          \"code\": \"invalid_type\",\n          \"path\": [\n            \"title\"\n          ],\n          \"message\": \"Invalid input: expected string, received undefined\"\n        },\n        {\n          \"code\": \"unrecognized_keys\",\n          \"keys\": [\n            \"x\",\n            \"w\",\n            \"h\"\n          ],\n          \"path\": [\n            \"grid\"\n          ],\n          \"message\": \"Unrecognized keys: \\\"x\\\", \\\"w\\\", \\\"h\\\"\"\n        },\n        {\n          \"code\": \"unrecognized_keys\",\n          \"keys\": [\n            \"type\",\n            \"config\"\n          ],\n          \"path\": [],\n          \"message\": \"Unrecognized keys: \\\"type\\\", \\\"config\\\"\"\n        }\n      ]\n    ],\n    \"path\": [\n      \"panels\",\n      2\n    ],\n    \"message\": \"Invalid input\"\n  }\n]"
+    },
+    "elapsed_seconds": 0.29
+  },
+  "note": "Unknown panel type"
+}

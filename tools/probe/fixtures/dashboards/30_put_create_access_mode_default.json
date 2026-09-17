@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/dashboards/gitops-probe-api-dash-ac-default",
+    "body": {
+      "title": "gitops-probe-api access probe",
+      "description": "Temporary probe object. Safe to delete.",
+      "panels": [],
+      "access_control": {
+        "access_mode": "default"
+      }
+    }
+  },
+  "response": {
+    "status": 500,
+    "body": {
+      "statusCode": 500,
+      "error": "Internal Server Error",
+      "message": "An internal server error occurred. Check Kibana server logs for details."
+    },
+    "elapsed_seconds": 0.3
+  },
+  "note": "access_control.access_mode=default on create (API key auth)"
+}

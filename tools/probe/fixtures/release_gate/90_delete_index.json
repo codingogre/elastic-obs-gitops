@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/gitops-probe-api-gates"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "acknowledged": true
+    },
+    "elapsed_seconds": 0.43
+  }
+}

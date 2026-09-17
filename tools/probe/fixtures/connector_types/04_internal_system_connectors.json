@@ -1,0 +1,58 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/internal/actions/connectors"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "system_action_connectors": [
+        {
+          "id": "system-connector-.cases",
+          "name": "Cases",
+          "connector_type_id": ".cases",
+          "is_preconfigured": false,
+          "is_deprecated": false,
+          "referenced_by_count": 0,
+          "is_system_action": true,
+          "is_connector_type_deprecated": false,
+          "auth_mode": "shared"
+        },
+        {
+          "id": "system-connector-.http-system",
+          "name": "HTTP",
+          "connector_type_id": ".http-system",
+          "is_preconfigured": false,
+          "is_deprecated": false,
+          "referenced_by_count": 0,
+          "is_system_action": true,
+          "is_connector_type_deprecated": false,
+          "auth_mode": "shared"
+        },
+        {
+          "id": "system-connector-.observability-ai-assistant",
+          "name": "Observability AI Assistant",
+          "connector_type_id": ".observability-ai-assistant",
+          "is_preconfigured": false,
+          "is_deprecated": false,
+          "referenced_by_count": 0,
+          "is_system_action": true,
+          "is_connector_type_deprecated": false,
+          "auth_mode": "shared"
+        },
+        {
+          "id": "system-connector-.workflows",
+          "name": "Workflows",
+          "connector_type_id": ".workflows",
+          "is_preconfigured": false,
+          "is_deprecated": false,
+          "referenced_by_count": 0,
+          "is_system_action": true,
+          "is_connector_type_deprecated": false,
+          "auth_mode": "shared"
+        }
+      ]
+    },
+    "elapsed_seconds": 0.41
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/agent_builder/conversations/445b7848-9308-4d88-9e5f-7da42d9dc5e9"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "445b7848-9308-4d88-9e5f-7da42d9dc5e9",
+      "agent_id": "elastic-ai-agent",
+      "user": {
+        "username": "<redacted>"
+      },
+      "title": "Pong Response",
+      "created_at": "2026-09-17T13:31:00.289Z",
+      "updated_at": "2026-09-17T13:31:08.494Z",
+      "status": "completed",
+      "read": false,
+      "pinned": false,
+      "read_only": false,
+      "access_control": {
+        "access_mode": "private",
+        "entries": []
+      },
+      "rounds": [
+        {
+          "id": "70ce587e-8011-4ee7-8695-5729493611b6",
+          "input": {
+            "message": "Reply with exactly one word: pong. Do not call any tools.",
+            "attachments": []
+          },
+          "started_at": "2026-09-17T13:31:04.324Z",
+          "author": {
+            "id": "unknown",
+            "username": "<redacted>"
+          },
+          "steps": [],
+          "model_usage": {
+            "connector_id": ".anthropic-claude-5-sonnet-chat_completion",
+            "llm_calls": 1,
+            "input_tokens": 16429,
+            "output_tokens": 71,
+            "model": "anthropic-claude-5-sonnet"
+          },
+          "time_to_first_token": 4145,
+          "time_to_last_token": 4156,
+          "trace_id": "a47c1529e8545cb4df6c97262904603c",
+          "status": "completed",
+          "response": {
+            "message": "pong"
+          }
+        }
+      ],
+      "state": {
+        "prompt": {
+          "responses": {}
+        },
+        "dynamic_tool_ids": []
+      },
+      "schema_version": 1,
+      "events": [
+        {
+          "id": "70ce587e-8011-4ee7-8695-5729493611b6::user_message",
+          "type": "user_message",
+          "created_at": "2026-09-17T13:31:04.324Z",
+          "actor": {
+            "type": "user",
+            "id": "unknown",
+            "username": "<redacted>"
+          },
+          "data": {
+            "message": "Reply with exactly one word: pong. Do not call any tools.",
+            "attachments": []
+          }
+        },
+        {
+          "id": "70ce587e-8011-4ee7-8695-5729493611b6::execution_started",
+          "type": "execution_started",
+          "created_at": "2026-09-17T13:31:04.324Z",
+          "actor": {
+            "type": "agent",
+            "id": "elastic-ai-agent"
+          },
+          "execution_id": "70ce587e-8011-4ee7-8695-5729493611b6::execution",
+          "trigger_event_id": "70ce587e-8011-4ee7-8695-5729493611b6::user_message",
+          "data": {
+            "trigger_type": "user_message"
+          }
+        },
+        {
+          "id": "70ce587e-8011-4ee7-8695-5729493611b6::execution_terminated",
+          "type": "execution_terminated",
+          "created_at": "2026-09-17T13:31:08.480Z",
+          "actor": {
+            "type": "agent",
+            "id": "elastic-ai-agent"
+          },
+          "execution_id": "70ce587e-8011-4ee7-8695-5729493611b6::execution",
+          "trigger_event_id": "70ce587e-8011-4ee7-8695-5729493611b6::user_message",
+          "data": {
+            "model_usage": {
+              "connector_id": ".anthropic-claude-5-sonnet-chat_completion",
+              "llm_calls": 1,
+              "input_tokens": 16429,
+              "output_tokens": 71,
+              "model": "anthropic-claude-5-sonnet"
+            },
+            "time_to_first_token": 4145,
+            "time_to_last_token": 4156,
+            "trace_id": "a47c1529e8545cb4df6c97262904603c",
+            "outcome": {
+              "type": "responded",
+              "response": {
+                "message": "pong"
+              }
+            }
+          }
+        }
+      ],
+      "permissions": {
+        "rename": true,
+        "delete": true,
+        "update_access_control": true
+      }
+    },
+    "elapsed_seconds": 0.32
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/kibana/global_settings"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "statusCode": 404,
+      "error": "Not Found",
+      "message": "Not Found"
+    },
+    "elapsed_seconds": 0.29
+  }
+}

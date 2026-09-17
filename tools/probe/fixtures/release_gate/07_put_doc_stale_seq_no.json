@@ -1,0 +1,52 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/gitops-probe-api-gates/_doc/gate-grid-dispatch?if_seq_no=0&if_primary_term=999",
+    "body": {
+      "gate_id": "gate-grid-dispatch",
+      "service": "grid-dispatch",
+      "window": "10m",
+      "slo_ids": [
+        "svc-grid-dispatch-availability",
+        "svc-grid-dispatch-latency"
+      ],
+      "objectives": [
+        {
+          "name": "error_ratio",
+          "max": 0.02,
+          "compare_to_base": true
+        },
+        {
+          "name": "p95_ms",
+          "max": 800
+        }
+      ],
+      "noisy_rule_budget": 5,
+      "managed_by": "terraform"
+    }
+  },
+  "response": {
+    "status": 409,
+    "body": {
+      "error": {
+        "root_cause": [
+          {
+            "type": "version_conflict_engine_exception",
+            "reason": "[gate-grid-dispatch]: version conflict, required seqNo [0], primary term [999]. current document has seqNo [1] and primary term [1]",
+            "index_uuid": "DFVaXEE4RNyCZxgjOvNPqg",
+            "shard": "0",
+            "index": "gitops-probe-api-gates"
+          }
+        ],
+        "type": "version_conflict_engine_exception",
+        "reason": "[gate-grid-dispatch]: version conflict, required seqNo [0], primary term [999]. current document has seqNo [1] and primary term [1]",
+        "index_uuid": "DFVaXEE4RNyCZxgjOvNPqg",
+        "shard": "0",
+        "index": "gitops-probe-api-gates"
+      },
+      "status": 409
+    },
+    "elapsed_seconds": 0.27
+  },
+  "note": "Optimistic concurrency with a stale if_seq_no/if_primary_term"
+}

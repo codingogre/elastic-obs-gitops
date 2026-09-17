@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/gitops-probe-api-gates-missing/_doc/x"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "error": {
+        "root_cause": [
+          {
+            "type": "index_not_found_exception",
+            "reason": "no such index [gitops-probe-api-gates-missing]",
+            "resource.type": "index_or_alias",
+            "resource.id": "gitops-probe-api-gates-missing",
+            "index_uuid": "_na_",
+            "index": "gitops-probe-api-gates-missing"
+          }
+        ],
+        "type": "index_not_found_exception",
+        "reason": "no such index [gitops-probe-api-gates-missing]",
+        "resource.type": "index_or_alias",
+        "resource.id": "gitops-probe-api-gates-missing",
+        "index_uuid": "_na_",
+        "index": "gitops-probe-api-gates-missing"
+      },
+      "status": 404
+    },
+    "elapsed_seconds": 0.27
+  }
+}

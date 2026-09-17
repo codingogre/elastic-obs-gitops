@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/alerting/v2/rules/gitops-probe-api-rule/_run"
+  },
+  "response": {
+    "status": 204,
+    "body": null,
+    "elapsed_seconds": 0.6
+  }
+}

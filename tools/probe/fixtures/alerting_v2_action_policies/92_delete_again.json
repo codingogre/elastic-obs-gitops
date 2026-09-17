@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/s/gitops-dev/api/alerting/v2/action_policies/gitops-probe-api-policy"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "code": "ACTION_POLICY_NOT_FOUND",
+      "error": "Not Found",
+      "message": "Action policy with id \"gitops-probe-api-policy\" not found",
+      "details": {
+        "action_policy_id": "gitops-probe-api-policy"
+      }
+    },
+    "elapsed_seconds": 0.29
+  }
+}

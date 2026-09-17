@@ -1,0 +1,45 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/internal/kibana/settings/alerting:v2:enabled",
+    "body": {
+      "value": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "settings": {
+        "buildNum": {
+          "userValue": 110817
+        },
+        "isDefaultIndexMigrated": {
+          "userValue": true
+        },
+        "defaultIndex": {
+          "userValue": "gitops-dv-traces"
+        },
+        "gitops-probe-api:unknown": {
+          "userValue": 1
+        },
+        "alerting:v2:enabled": {
+          "userValue": true
+        },
+        "enableESQL": {
+          "isOverridden": true,
+          "userValue": true
+        },
+        "bfetch:disable": {
+          "isOverridden": true,
+          "userValue": true
+        },
+        "labs:dashboard:deferBelowFold": {
+          "isOverridden": true,
+          "userValue": false
+        }
+      }
+    },
+    "elapsed_seconds": 0.57
+  },
+  "note": "A global-scope key sent to the space route (expected to be rejected; no global write happens)"
+}

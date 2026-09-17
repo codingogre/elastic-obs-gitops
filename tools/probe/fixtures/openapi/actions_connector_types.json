@@ -1,0 +1,203 @@
+{
+  "source": "https://raw.githubusercontent.com/elastic/kibana/main/oas_docs/output/kibana.serverless.yaml",
+  "openapi_info_version": "",
+  "paths": {
+    "/api/actions/connector_types": {
+      "get": {
+        "description": "**Spaces method and path for this operation:**\n\n<div><span class=\"operation-verb get\">get</span>&nbsp;<span class=\"operation-path\">/s/{space_id}/api/actions/connector_types</span></div>\n\nRefer to [Spaces](https://www.elastic.co/docs/deploy-manage/manage-spaces) for more information.\n\nYou do not need any Kibana feature privileges to run this API.",
+        "operationId": "get-actions-connector-types",
+        "parameters": [
+          {
+            "description": "A filter to limit the retrieved connector types to those that support a specific feature (such as alerting or cases).",
+            "in": "query",
+            "name": "feature_id",
+            "required": false,
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Kibana_HTTP_APIs_connector_type_response"
+                  },
+                  "type": "array"
+                },
+                "examples": {
+                  "getConnectorTypesServerlessResponse": {
+                    "$ref": "#/components/examples/get_connector_types_generativeai_response"
+                  }
+                }
+              }
+            },
+            "description": "Indicates a successful call."
+          },
+          "403": {
+            "description": "Indicates that this call is forbidden."
+          }
+        },
+        "summary": "Get connector types",
+        "tags": [
+          "connectors"
+        ],
+        "x-metaTags": [
+          {
+            "content": "Kibana, Elastic Cloud Serverless",
+            "name": "product_name"
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "#/components/examples/get_connector_types_generativeai_response": {
+      "summary": "A list of connector types for the `generativeAI` feature.",
+      "value": [
+        {
+          "id": ".gen-ai",
+          "name": "OpenAI",
+          "enabled": true,
+          "enabled_in_config": true,
+          "enabled_in_license": true,
+          "minimum_license_required": "enterprise",
+          "supported_feature_ids": [
+            "generativeAIForSecurity",
+            "generativeAIForObservability",
+            "generativeAIForSearchPlayground"
+          ],
+          "is_system_action_type": false
+        },
+        {
+          "id": ".bedrock",
+          "name": "AWS Bedrock",
+          "enabled": true,
+          "enabled_in_config": true,
+          "enabled_in_license": true,
+          "minimum_license_required": "enterprise",
+          "supported_feature_ids": [
+            "generativeAIForSecurity",
+            "generativeAIForObservability",
+            "generativeAIForSearchPlayground"
+          ],
+          "is_system_action_type": false
+        },
+        {
+          "id": ".gemini",
+          "name": "Google Gemini",
+          "enabled": true,
+          "enabled_in_config": true,
+          "enabled_in_license": true,
+          "minimum_license_required": "enterprise",
+          "supported_feature_ids": [
+            "generativeAIForSecurity"
+          ],
+          "is_system_action_type": false
+        }
+      ]
+    },
+    "#/components/schemas/Kibana_HTTP_APIs_connector_type_response": {
+      "additionalProperties": false,
+      "properties": {
+        "allow_multiple_system_actions": {
+          "description": "Indicates whether multiple instances of the same system action connector can be used in a single rule.",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "Description of the connector type.",
+          "type": "string"
+        },
+        "enabled": {
+          "description": "Indicates whether the connector is enabled.",
+          "type": "boolean"
+        },
+        "enabled_in_config": {
+          "description": "Indicates whether the connector is enabled in the Kibana configuration.",
+          "type": "boolean"
+        },
+        "enabled_in_license": {
+          "description": "Indicates whether the connector is enabled through the license.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "The identifier for the connector.",
+          "type": "string"
+        },
+        "is_deprecated": {
+          "description": "Indicates whether the connector type is deprecated.",
+          "type": "boolean"
+        },
+        "is_experimental": {
+          "description": "Indicates whether the connector type is in technical preview.",
+          "type": "boolean"
+        },
+        "is_system_action_type": {
+          "description": "Indicates whether the action is a system action.",
+          "type": "boolean"
+        },
+        "is_testable": {
+          "description": "Indicates whether the connector type supports testing.",
+          "type": "boolean"
+        },
+        "minimum_license_required": {
+          "description": "The minimum license required to enable the connector.",
+          "enum": [
+            "basic",
+            "standard",
+            "gold",
+            "platinum",
+            "enterprise",
+            "trial"
+          ],
+          "type": "string"
+        },
+        "name": {
+          "description": "The name of the connector type.",
+          "type": "string"
+        },
+        "source": {
+          "description": "The source of the connector type definition.",
+          "enum": [
+            "yml",
+            "spec",
+            "stack"
+          ],
+          "type": "string"
+        },
+        "sub_feature": {
+          "description": "Indicates the sub-feature type the connector is grouped under.",
+          "enum": [
+            "endpointSecurity"
+          ],
+          "type": "string"
+        },
+        "supported_feature_ids": {
+          "description": "The list of supported features",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "enabled",
+        "enabled_in_config",
+        "enabled_in_license",
+        "minimum_license_required",
+        "supported_feature_ids",
+        "is_system_action_type",
+        "is_deprecated",
+        "source",
+        "is_testable"
+      ],
+      "title": "connector_type_response",
+      "type": "object"
+    }
+  }
+}

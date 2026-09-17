@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/s/gitops-dev/api/workflows/workflow/gitops-probe-api-wf?force=true"
+  },
+  "response": {
+    "status": 200,
+    "body": null,
+    "elapsed_seconds": 2.91
+  }
+}

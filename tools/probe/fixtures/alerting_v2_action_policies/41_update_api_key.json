@@ -1,0 +1,12 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/alerting/v2/action_policies/gitops-probe-api-policy-key/_update_api_key"
+  },
+  "response": {
+    "status": 204,
+    "body": null,
+    "elapsed_seconds": 0.75
+  },
+  "note": "Rebinds the policy to the caller's API key"
+}

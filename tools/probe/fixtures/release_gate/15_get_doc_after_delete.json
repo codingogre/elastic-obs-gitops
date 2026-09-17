@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/gitops-probe-api-gates/_doc/gate-grid-dispatch"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "_index": "gitops-probe-api-gates",
+      "_id": "gate-grid-dispatch",
+      "found": false
+    },
+    "elapsed_seconds": 0.26
+  }
+}

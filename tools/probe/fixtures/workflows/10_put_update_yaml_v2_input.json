@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/workflows/workflow/gitops-probe-api-wf",
+    "body": {
+      "yaml": "name: gitops-probe-api workflow (Phase 0 API probe)\nenabled: true\ndescription: Temporary probe object. Safe to delete.\ntags:\n  - gitops-probe-api\ntriggers:\n  - type: manual\n    inputs:\n      type: object\n      properties:\n        payload:\n          $ref: \"#/kibana/definitions/alertingV2NotificationGroup\"\n      required:\n        - payload\nsteps:\n  - name: log\n    type: console\n    with:\n      message: \"gitops-probe-api {{ inputs.payload.episodes[0].episode_id }}\"\n"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": "gitops-probe-api-wf",
+      "lastUpdatedAt": "2026-09-17T13:21:11.637Z",
+      "lastUpdatedBy": "<redacted-user>",
+      "enabled": true,
+      "validationErrors": [],
+      "valid": true
+    },
+    "elapsed_seconds": 1.24
+  },
+  "note": "Update the YAML to take the alertingV2NotificationGroup payload"
+}

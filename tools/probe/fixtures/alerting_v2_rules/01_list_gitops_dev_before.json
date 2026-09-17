@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/alerting/v2/rules"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "top_level_keys": [
+        "items",
+        "page",
+        "per_page",
+        "total"
+      ],
+      "total": 0,
+      "item_count": 0,
+      "item_field_paths": [],
+      "contains_probe_rule": false,
+      "note": "Pre-existing rules belong to another demo: only field names are recorded."
+    },
+    "elapsed_seconds": 0.29
+  }
+}

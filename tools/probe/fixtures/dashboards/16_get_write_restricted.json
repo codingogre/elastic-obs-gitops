@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/s/gitops-dev/api/dashboards/gitops-probe-api-dashboard-restricted"
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "statusCode": 404,
+      "error": "Not Found",
+      "message": "A dashboard with ID [gitops-probe-api-dashboard-restricted] was not found."
+    },
+    "elapsed_seconds": 0.28
+  }
+}

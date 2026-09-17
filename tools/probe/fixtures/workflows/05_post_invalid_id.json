@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/api/workflows/workflow",
+    "body": {
+      "id": "Gitops_Probe_Api_Bad",
+      "yaml": "name: gitops-probe-api workflow (Phase 0 API probe)\nenabled: true\ndescription: Temporary probe object. Safe to delete.\ntags:\n  - gitops-probe-api\ntriggers:\n  - type: manual\nsteps:\n  - name: log\n    type: console\n    with:\n      message: gitops-probe-api\n"
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "statusCode": 400,
+      "error": "Bad Request",
+      "message": "[\n  {\n    \"origin\": \"string\",\n    \"code\": \"invalid_format\",\n    \"format\": \"regex\",\n    \"pattern\": \"/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/\",\n    \"path\": [\n      \"id\"\n    ],\n    \"message\": \"Invalid string: must match pattern /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/\"\n  }\n]"
+    },
+    "elapsed_seconds": 0.28
+  },
+  "note": "Id outside ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$"
+}

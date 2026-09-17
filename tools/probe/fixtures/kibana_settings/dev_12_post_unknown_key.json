@@ -1,0 +1,42 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/internal/kibana/settings/gitops-probe-api:unknown",
+    "body": {
+      "value": 1
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "settings": {
+        "buildNum": {
+          "userValue": 110817
+        },
+        "isDefaultIndexMigrated": {
+          "userValue": true
+        },
+        "defaultIndex": {
+          "userValue": "gitops-dv-traces"
+        },
+        "gitops-probe-api:unknown": {
+          "userValue": 1
+        },
+        "enableESQL": {
+          "isOverridden": true,
+          "userValue": true
+        },
+        "bfetch:disable": {
+          "isOverridden": true,
+          "userValue": true
+        },
+        "labs:dashboard:deferBelowFold": {
+          "isOverridden": true,
+          "userValue": false
+        }
+      }
+    },
+    "elapsed_seconds": 0.46
+  },
+  "note": "Key that is not registered / not on the serverless allowlist"
+}

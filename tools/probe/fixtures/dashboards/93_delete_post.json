@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/s/gitops-dev/api/dashboards/23bdae75-2731-4f98-a029-3c404aa82977"
+  },
+  "response": {
+    "status": 204,
+    "body": null,
+    "elapsed_seconds": 0.71
+  }
+}

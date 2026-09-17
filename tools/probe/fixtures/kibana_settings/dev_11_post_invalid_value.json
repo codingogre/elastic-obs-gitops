@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/s/gitops-dev/internal/kibana/settings/dateFormat:dow",
+    "body": {
+      "value": "Funday"
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "statusCode": 400,
+      "error": "Bad Request",
+      "message": "[validation [dateFormat:dow]]: Invalid day of week: Funday"
+    },
+    "elapsed_seconds": 0.28
+  },
+  "note": "Value outside the setting's schema"
+}

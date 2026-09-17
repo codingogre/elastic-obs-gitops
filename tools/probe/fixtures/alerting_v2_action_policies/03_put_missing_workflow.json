@@ -1,0 +1,71 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/s/gitops-dev/api/alerting/v2/action_policies/gitops-probe-api-policy",
+    "body": {
+      "name": "gitops-probe-api policy (Phase 0 API probe)",
+      "description": "Temporary probe object. Safe to delete.",
+      "destinations": [
+        {
+          "type": "workflow",
+          "id": "gitops-probe-api-no-such-wf"
+        }
+      ],
+      "matcher": {
+        "tags": [
+          "gitops-probe-api-policy-match"
+        ],
+        "expression": "episode_status : \"active\" or episode_status : \"inactive\""
+      },
+      "tags": [
+        "gitops-probe-api"
+      ],
+      "grouping_mode": "per_episode",
+      "throttle": {
+        "strategy": "on_status_change"
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "id": "gitops-probe-api-policy",
+      "version": "WzY5MDUzMywyXQ==",
+      "name": "gitops-probe-api policy (Phase 0 API probe)",
+      "description": "Temporary probe object. Safe to delete.",
+      "enabled": true,
+      "destinations": [
+        {
+          "type": "workflow",
+          "id": "gitops-probe-api-no-such-wf"
+        }
+      ],
+      "matcher": {
+        "tags": [
+          "gitops-probe-api-policy-match"
+        ],
+        "expression": "episode_status : \"active\" or episode_status : \"inactive\""
+      },
+      "group_by": null,
+      "tags": [
+        "gitops-probe-api"
+      ],
+      "grouping_mode": "per_episode",
+      "throttle": {
+        "strategy": "on_status_change",
+        "interval": null
+      },
+      "snoozed_until": null,
+      "auth": {
+        "owner": "<redacted-user>",
+        "created_by_user": true
+      },
+      "created_by": "<redacted>",
+      "created_at": "2026-09-17T13:20:52.081Z",
+      "updated_by": "<redacted>",
+      "updated_at": "2026-09-17T13:20:52.081Z"
+    },
+    "elapsed_seconds": 1.31
+  },
+  "note": "Destination workflow does not exist"
+}
