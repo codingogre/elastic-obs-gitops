@@ -1,0 +1,77 @@
+name: capture-dev
+run-name: capture ${{ github.event.client_payload.object_title || github.event.client_payload.object_id || inputs.object_title || inputs.object_id }}
+
+# UI → code: a change made in the dev UI comes back as a pull request whose dev plan only imports.
+# Triggered by the gitops-sync-to-git workflow in Elastic (which the platform assistant calls from chat), or by hand.
+on:
+  repository_dispatch:
+    types: [capture-ui-change]
+  workflow_dispatch:
+    inputs:
+      object_type:
+        type: choice
+        options: [dashboard, workflow]
+        default: dashboard
+      object_title:
+        default: ""
+      object_id:
+        default: ""
+      note:
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: tf-dev
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+  TF_STATE_REGION: ${{ secrets.TF_STATE_REGION }}
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      deployment: false
+    env:
+      # A personal token, so the pull request it opens runs the pr workflow.
+      GH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+      KIBANA_SPACE: ${{ secrets.KIBANA_SPACE }}
+      ELASTICSEARCH_ENDPOINTS: ${{ secrets.ELASTICSEARCH_ENDPOINTS }}
+      ELASTICSEARCH_API_KEY: ${{ secrets.ELASTICSEARCH_API_KEY }}
+      KIBANA_ENDPOINT: ${{ secrets.KIBANA_ENDPOINT }}
+      KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      SN_URL: ${{ secrets.SN_URL }}
+      SN_USER: ${{ secrets.SN_USER }}
+      SN_PASSWORD: ${{ secrets.SN_PASSWORD }}
+      PD_ROUTING_KEY: ${{ secrets.PD_ROUTING_KEY }}
+      GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+      OBJECT_TYPE: ${{ github.event.client_payload.object_type || inputs.object_type }}
+      OBJECT_TITLE: ${{ github.event.client_payload.object_title || inputs.object_title }}
+      OBJECT_ID: ${{ github.event.client_payload.object_id || inputs.object_id }}
+      NOTE: ${{ github.event.client_payload.note || inputs.note }}
+      REQUESTED_BY: ${{ github.event.client_payload.requested_by || github.actor }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_DISPATCH_TOKEN }}
+      - uses: ./.github/actions/tf-env
+        with:
+          build-provider: "true"
+      - name: init
+        run: python3 scripts/with_env.py dev --backend -- terraform -chdir=envs/dev init -input=false
+      - name: capture and open the pull request
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          args=(--object-type "${OBJECT_TYPE:-dashboard}" --note "$NOTE" --requested-by "$REQUESTED_BY")
+          [ -n "$OBJECT_ID" ] && args+=(--object-id "$OBJECT_ID")
+          [ -n "$OBJECT_TITLE" ] && args+=(--object-title "$OBJECT_TITLE")
+          python3 scripts/with_env.py dev -- python3 scripts/capture.py "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
