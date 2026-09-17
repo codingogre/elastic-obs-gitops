@@ -1,0 +1,132 @@
+version: "1"
+name: Post card
+description: >-
+  Posts an Adaptive Card to the platform Teams channel through the Teams connector. Pipelines use it for drift,
+  release and promotion cards, so every card in the channel shares one look.
+enabled: true
+tags:
+  - gitops
+  - notifications
+triggers:
+  - type: manual
+    inputs:
+      properties:
+        title:
+          type: string
+          description: Card title. The [GITOPS-DEMO] prefix is added when missing.
+        subtitle:
+          type: string
+          default: ""
+          description: Subtle line under the header, for example the environment and bundle version.
+        status:
+          type: string
+          enum: ["good", "warning", "attention"]
+          default: good
+          description: Header colour.
+        badge:
+          type: string
+          default: ""
+          description: Small upper-case label above the title, for example DRIFT CONTROL · REVERTED.
+        text:
+          type: string
+          default: ""
+          description: Closing note under the facts.
+        facts:
+          type: array
+          description: Label and value pairs.
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              value:
+                type: string
+            required: ["title", "value"]
+          default: []
+        links:
+          type: array
+          description: Buttons. The first one is highlighted.
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              url:
+                type: string
+            required: ["title", "url"]
+          default: []
+      required: ["title"]
+steps:
+  - name: header
+    type: data.set
+    with:
+      title: "{% assign head = inputs.title | slice: 0, 14 %}{% if head == '[GITOPS-DEMO] ' %}{{ inputs.title }}{% else %}[GITOPS-DEMO] {{ inputs.title }}{% endif %}"
+      header:
+        - type: Container
+          style: "{{ inputs.status }}"
+          bleed: true
+          items:
+            - type: ColumnSet
+              columns:
+                - type: Column
+                  width: auto
+                  verticalContentAlignment: Center
+                  items:
+                    - type: Image
+                      url: https://avatars.githubusercontent.com/u/6764390?s=96&v=4
+                      width: 40px
+                      altText: Elastic
+                - type: Column
+                  width: stretch
+                  verticalContentAlignment: Center
+                  items:
+                    - type: TextBlock
+                      text: "{% if inputs.badge != '' %}{{ inputs.badge | upcase }}{% else %}ELASTIC GITOPS  ·  {% if inputs.status == 'good' %}ALL GOOD{% elsif inputs.status == 'warning' %}NEEDS A LOOK{% else %}ACTION NEEDED{% endif %}{% endif %}"
+                      weight: Bolder
+                      size: Small
+                      color: "{% if inputs.status == 'attention' %}Attention{% else %}Dark{% endif %}"
+                      spacing: None
+                    - type: TextBlock
+                      text: "{% assign head = inputs.title | slice: 0, 14 %}{% if head == '[GITOPS-DEMO] ' %}{{ inputs.title }}{% else %}[GITOPS-DEMO] {{ inputs.title }}{% endif %}"
+                      weight: Bolder
+                      size: Large
+                      wrap: true
+                      spacing: None
+
+  - name: optional_blocks
+    type: data.parseJson
+    source: >-
+      [{% assign sep = '' %}{% if inputs.subtitle != '' %}{"type":"TextBlock","text":{{ inputs.subtitle | json }},"isSubtle":true,"wrap":true,"spacing":"Medium"}{% assign sep = ',' %}{% endif %}{% if inputs.facts.size > 0 %}{{ sep }}{"type":"FactSet","spacing":"Small","facts":{{ inputs.facts | json }}}{% assign sep = ',' %}{% endif %}{% if inputs.text != '' %}{{ sep }}{"type":"TextBlock","text":{{ inputs.text | json }},"isSubtle":true,"wrap":true,"spacing":"Medium","size":"Small"}{% endif %}]
+
+  - name: link_actions
+    type: data.parseJson
+    source: >-
+      [{% for link in inputs.links %}{"type":"Action.OpenUrl","title":{{ link.title | json }},"url":{{ link.url | json }}{% if forloop.first %},"style":"positive"{% endif %}}{% unless forloop.last %},{% endunless %}{% endfor %}]
+
+  - name: card
+    type: data.set
+    with:
+      card:
+        type: AdaptiveCard
+        $schema: http://adaptivecards.io/schemas/adaptive-card.json
+        version: "1.4"
+        msteams:
+          width: Full
+        body: "${{ variables.header | concat: steps.optional_blocks.output }}"
+        actions: "${{ steps.link_actions.output }}"
+
+  - name: post_card
+    type: teams
+    connector-id: abd684be-bb1c-4dec-81ba-ce4e6922bad3
+    timeout: 1m
+    with:
+      message: "{{ variables.card | json }}"
+    on-failure:
+      continue: true
+
+  - name: result
+    type: workflow.output
+    with:
+      posted: "${{ steps.post_card.error == nil }}"
+      title: "{{ variables.title }}"
+      error: "{{ steps.post_card.error.message | default: '' }}"

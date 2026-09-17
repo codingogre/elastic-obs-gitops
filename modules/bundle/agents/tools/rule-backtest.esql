@@ -1,0 +1,22 @@
+FROM traces-*
+| WHERE @timestamp >= NOW() - 7 days
+    AND service.name == ?service
+    AND kind == "Server"
+| STATS requests = COUNT(*),
+        errors = COUNT(*) WHERE status.code == "Error"
+    BY bucket = BUCKET(@timestamp, 5 minutes)
+| EVAL error_ratio = TO_DOUBLE(errors) / requests
+| STATS buckets_with_data = COUNT(*),
+        buckets_over_threshold = COUNT(*) WHERE error_ratio > ?error_ratio_threshold,
+        max_bucket_error_ratio = MAX(error_ratio),
+        median_bucket_error_ratio = MEDIAN(error_ratio),
+        min_bucket_requests = MIN(requests),
+        first_breach = MIN(bucket) WHERE error_ratio > ?error_ratio_threshold,
+        last_breach = MAX(bucket) WHERE error_ratio > ?error_ratio_threshold
+| EVAL error_ratio_threshold = ?error_ratio_threshold,
+       pct_buckets_over_threshold = ROUND(100.0 * buckets_over_threshold / buckets_with_data, 2),
+       estimated_breach_buckets_per_day = ROUND(288.0 * buckets_over_threshold / buckets_with_data, 1),
+       hours_with_data = ROUND(buckets_with_data * 5 / 60.0, 1),
+       max_bucket_error_ratio = ROUND(max_bucket_error_ratio, 5),
+       median_bucket_error_ratio = ROUND(median_bucket_error_ratio, 5)
+| KEEP error_ratio_threshold, buckets_with_data, hours_with_data, buckets_over_threshold, pct_buckets_over_threshold, estimated_breach_buckets_per_day, max_bucket_error_ratio, median_bucket_error_ratio, min_bucket_requests, first_breach, last_breach

@@ -1,0 +1,182 @@
+version: "1"
+name: Sync to Git
+description: >-
+  Opens a pull request that captures an object changed in this dev space's UI. Finds a dashboard by its title
+  when no ID is given, then asks GitHub to run the capture pipeline through the GitHub dispatch connector.
+enabled: true
+tags:
+  - gitops
+  - capture
+triggers:
+  - type: manual
+    inputs:
+      properties:
+        object_type:
+          type: string
+          enum: ["dashboard", "slo", "workflow", "agent", "tool", "skill", "alert_v2_rule"]
+          default: dashboard
+          description: Kind of object to capture.
+        object_title:
+          type: string
+          default: ""
+          description: Title of the object as shown in Kibana. Used to find a dashboard when object_id is empty.
+        object_id:
+          type: string
+          default: ""
+          description: ID of the object. Required for everything except dashboards found by title.
+        note:
+          type: string
+          default: ""
+          description: What changed and why, copied into the pull request.
+        requested_by:
+          type: string
+          default: ""
+          description: Who asked for the capture.
+steps:
+  - name: dev_only
+    type: if
+    condition: "${{ workflow.spaceId == 'default' }}"
+    steps:
+      - name: fail_not_dev
+        type: workflow.fail
+        with:
+          message: "Sync to Git captures changes made in dev. This workflow runs in the production space, where changes arrive only through a reviewed promotion."
+          reason: not_dev
+
+  - name: needs_target
+    type: if
+    condition: "${{ inputs.object_id == '' and inputs.object_title == '' }}"
+    steps:
+      - name: fail_no_target
+        type: workflow.fail
+        with:
+          message: "Tell me which {{ inputs.object_type }} to capture: give its title or its ID."
+          reason: no_target
+
+  - name: start
+    type: data.set
+    with:
+      object_id: "{{ inputs.object_id }}"
+      object_title: "{{ inputs.object_title }}"
+
+  # Dashboards can be found by title.
+  - name: find_by_title
+    type: if
+    condition: "${{ inputs.object_id == '' }}"
+    steps:
+      - name: title_needs_dashboard
+        type: if
+        condition: "${{ inputs.object_type != 'dashboard' }}"
+        steps:
+          - name: fail_title_lookup_type
+            type: workflow.fail
+            with:
+              message: "Finding an object by title works for dashboards. For a {{ inputs.object_type }}, give its ID."
+              reason: title_lookup_unsupported
+
+      - name: search_dashboards
+        type: kibana.request
+        with:
+          method: GET
+          path: "/s/{{ workflow.spaceId }}/api/dashboards"
+          query:
+            query: "{{ inputs.object_title }}"
+            per_page: "100"
+
+      - name: match_title
+        type: data.set
+        with:
+          exact_text: "{% assign wanted = inputs.object_title | downcase | strip %}{% for d in steps.search_dashboards.output.data %}{% assign t = d.data.title | downcase | strip %}{% if t == wanted %}{{ d.id }}::{{ d.data.title }}||{% endif %}{% endfor %}"
+          close_text: "{% for d in steps.search_dashboards.output.data limit: 10 %}'{{ d.data.title }}' (ID {{ d.id }}){% unless forloop.last %}, {% endunless %}{% endfor %}"
+          found: "${{ steps.search_dashboards.output.data | size }}"
+
+      - name: pick
+        type: data.set
+        with:
+          exact: "${{ variables.exact_text | split: '||' | compact }}"
+          chosen: "{% assign exact = variables.exact_text | split: '||' %}{% if exact.size == 1 %}{{ exact[0] }}{% elsif exact.size == 0 and variables.found == 1 %}{{ steps.search_dashboards.output.data[0].id }}::{{ steps.search_dashboards.output.data[0].data.title }}{% endif %}"
+
+      - name: ambiguous
+        type: if
+        condition: "${{ variables.chosen == '' }}"
+        steps:
+          - name: fail_ambiguous
+            type: workflow.fail
+            with:
+              message: "{% if variables.found == 0 %}No dashboard in space {{ workflow.spaceId }} matches '{{ inputs.object_title }}'. Check the title in Kibana, or give the dashboard ID.{% else %}{{ variables.found }} dashboards in space {{ workflow.spaceId }} match '{{ inputs.object_title }}': {{ variables.close_text }}. Give the exact title or the dashboard ID.{% endif %}"
+              reason: title_not_unique
+
+      - name: resolved
+        type: data.set
+        with:
+          object_id: "{{ variables.chosen | split: '::' | first }}"
+          object_title: "{{ variables.chosen | split: '::' | last }}"
+
+  # A dashboard given by ID must exist here.
+  - name: check_by_id
+    type: if
+    condition: "${{ inputs.object_id != '' and inputs.object_type == 'dashboard' }}"
+    steps:
+      - name: get_dashboard
+        type: kibana.request
+        with:
+          method: GET
+          path: "/s/{{ workflow.spaceId }}/api/dashboards/{{ inputs.object_id | url_encode }}"
+        on-failure:
+          continue: true
+      - name: dashboard_missing
+        type: if
+        condition: "steps.get_dashboard.error: *"
+        steps:
+          - name: fail_dashboard_missing
+            type: workflow.fail
+            with:
+              message: "No dashboard with ID '{{ inputs.object_id }}' exists in space {{ workflow.spaceId }}."
+              reason: object_not_found
+      - name: title_from_dashboard
+        type: data.set
+        with:
+          object_title: "{{ steps.get_dashboard.output.data.title | default: inputs.object_title }}"
+
+  # repository_dispatch: GitHub answers 204 and runs capture-dev.yml.
+  - name: dispatch_capture
+    type: http
+    connector-id: e5ab5e5b-6f2b-488a-b140-a474987298bf
+    timeout: 1m
+    with:
+      method: POST
+      path: /repos/codingogre/elastic-obs-gitops/dispatches
+      headers:
+        Accept: application/vnd.github+json
+        X-GitHub-Api-Version: "2022-11-28"
+      body:
+        event_type: capture-ui-change
+        client_payload:
+          object_type: "{{ inputs.object_type }}"
+          object_id: "{{ variables.object_id }}"
+          object_title: "{{ variables.object_title }}"
+          space: "{{ workflow.spaceId }}"
+          note: "{{ inputs.note }}"
+          requested_by: "{{ inputs.requested_by }}"
+          execution_id: "{{ execution.id }}"
+    on-failure:
+      continue: true
+
+  - name: dispatch_failed
+    type: if
+    condition: "steps.dispatch_capture.error: *"
+    steps:
+      - name: fail_dispatch
+        type: workflow.fail
+        with:
+          message: "GitHub did not accept the capture request for {{ inputs.object_type }} '{{ variables.object_title }}': {{ steps.dispatch_capture.error.message }}"
+          reason: dispatch_failed
+
+  - name: result
+    type: workflow.output
+    with:
+      object_type: "{{ inputs.object_type }}"
+      object_id: "{{ variables.object_id }}"
+      object_title: "{{ variables.object_title }}"
+      space: "{{ workflow.spaceId }}"
+      message: "Opened a capture request for {{ inputs.object_type }} '{{ variables.object_title }}' (ID {{ variables.object_id }}). The pull request will appear in GitHub in about a minute: https://github.com/codingogre/elastic-obs-gitops/pulls"

@@ -1,0 +1,9 @@
+FROM gitops-events
+| WHERE @timestamp >= NOW() - 24 hours
+    AND event.action IN ("release_started", "release_succeeded", "rollback", "promotion", "gate_evaluated", "apply")
+    AND (gitops.service == ?service OR gitops.service IS NULL)
+| EVAL scope = CASE(gitops.service IS NULL, "bundle", "service"),
+       minutes_ago = DATE_DIFF("minute", @timestamp, NOW())
+| KEEP @timestamp, minutes_ago, event.action, event.outcome, scope, gitops.env, gitops.service, gitops.service_version, gitops.baseline_version, gitops.verdict, gitops.reasons, gitops.bundle_version, gitops.run_url, message
+| SORT @timestamp DESC
+| LIMIT 50

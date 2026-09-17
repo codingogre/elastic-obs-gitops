@@ -1,0 +1,6 @@
+FROM gitops-events
+| WHERE @timestamp >= NOW() - 24 hours AND gitops.service == "${service}"
+| EVAL gitops.service_version = COALESCE(gitops.service_version, "-"), gitops.verdict = COALESCE(gitops.verdict, "-")
+| SORT @timestamp DESC
+| KEEP @timestamp, event.action, gitops.service_version, gitops.env, gitops.verdict, event.outcome, gitops.duration_s
+| LIMIT 50

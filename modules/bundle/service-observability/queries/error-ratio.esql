@@ -1,0 +1,8 @@
+FROM traces-*
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend
+    AND service.name == "${service}" AND kind == "Server"
+| STATS requests = COUNT(*), errors = COUNT(*) WHERE status.code == "Error"
+    BY bucket = BUCKET(@timestamp, 75, ?_tstart, ?_tend)
+| EVAL error_ratio = ROUND(TO_DOUBLE(errors) / requests, 4), release_max_error_ratio = ${max_error_ratio}
+| KEEP bucket, error_ratio, release_max_error_ratio
+| SORT bucket

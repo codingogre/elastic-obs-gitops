@@ -1,0 +1,6 @@
+FROM traces-*
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend
+    AND service.name == "${service}" AND kind == "Server"
+| STATS requests = COUNT(*) BY minute = BUCKET(@timestamp, 1 minute)
+| STATS requests_per_minute = ROUND(AVG(requests), 1) BY bucket = BUCKET(minute, 75, ?_tstart, ?_tend)
+| SORT bucket

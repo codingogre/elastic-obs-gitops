@@ -1,0 +1,647 @@
+version: "1"
+name: Remediate service
+description: >-
+  Runs when the error-spike alert for a service opens or closes. On open, the SRE agent triages the episode, a
+  ServiceNow incident opens, PagerDuty pages, and Teams asks a person to approve a rollback, which runs as a
+  GitHub pipeline. On close, the incident closes, the page resolves and Teams gets the all-clear.
+enabled: true
+tags:
+  - gitops
+  - remediation
+settings:
+  # Alerting v2 dispatch is at least once. One run per episode and status; duplicates are dropped (skipped).
+  concurrency:
+    key: "{{ inputs.payload.episodes[0].episode_id }}-{{ inputs.payload.episodes[0].episode_status }}"
+    strategy: drop
+    max: 1
+triggers:
+  - type: manual
+    inputs:
+      type: object
+      properties:
+        payload:
+          $ref: "#/kibana/definitions/alertingV2NotificationGroup"
+        dry_run:
+          type: boolean
+          default: false
+          description: Log the ServiceNow, PagerDuty, Teams and GitHub calls instead of making them.
+      required:
+        - payload
+steps:
+  # Recovery episodes carry data {}, so everything that must match across open and close uses episode_id.
+  - name: episode
+    type: data.set
+    with:
+      episode_id: "{{ inputs.payload.episodes[0].episode_id }}"
+      episode_status: "{{ inputs.payload.episodes[0].episode_status }}"
+      rule_id: "{{ inputs.payload.episodes[0].rule_id }}"
+      rule_name: "{{ inputs.payload.rules[inputs.payload.episodes[0].rule_id].name | default: inputs.payload.episodes[0].rule_id }}"
+      service: "{{ inputs.payload.episodes[0].data.service | default: '' }}"
+      version: "{{ inputs.payload.episodes[0].data.version | default: '' }}"
+      requests: "${{ inputs.payload.episodes[0].data.requests | default: 0 }}"
+      errors: "${{ inputs.payload.episodes[0].data.errors | default: 0 }}"
+      error_ratio: "${{ inputs.payload.episodes[0].data.error_ratio | default: 0 }}"
+      error_pct: "{{ inputs.payload.episodes[0].data.error_ratio | default: 0 | times: 100 | round: 1 }}"
+      environment: "{% if inputs.payload.episodes[0].data.environment %}{{ inputs.payload.episodes[0].data.environment }}{% elsif workflow.spaceId == 'default' %}prod{% else %}dev{% endif %}"
+      episode_url: "{{ kibanaUrl }}{% if workflow.spaceId != 'default' %}/s/{{ workflow.spaceId }}{% endif %}/app/management/alertingV2/episodes/{{ inputs.payload.episodes[0].episode_id }}"
+      event_time: "{{ inputs.payload.episodes[0].last_event_timestamp | date: '%H:%M:%S UTC' }}"
+
+  # ------------------------------------------------------------------ open --
+  - name: when_active
+    type: if
+    condition: "inputs.payload.episodes.0.episode_status: active"
+    steps:
+      - name: versions
+        type: elasticsearch.esql.query
+        timeout: 2m
+        with:
+          query: >-
+            FROM traces-*
+            | WHERE service.name == ? AND processor.event == "transaction"
+            | STATS requests = COUNT(*), errors = COUNT(*) WHERE event.outcome == "failure", first_seen = MIN(@timestamp), last_seen = MAX(@timestamp) BY service.version
+            | EVAL error_ratio = ROUND(TO_DOUBLE(errors) / requests, 4)
+            | KEEP service.version, requests, errors, error_ratio, first_seen, last_seen
+            | SORT first_seen DESC
+            | LIMIT 10
+          params: ["{{ variables.service }}"]
+          filter:
+            range:
+              "@timestamp":
+                gte: now-30m
+        on-failure:
+          retry:
+            max-attempts: 2
+            delay: 5s
+          continue: true
+
+      - name: changes
+        type: elasticsearch.esql.query
+        timeout: 1m
+        with:
+          query: >-
+            FROM gitops-events
+            | WHERE event.action IN ("release_started", "release_succeeded", "rollback", "promotion", "gate_evaluated")
+              AND (gitops.service == ? OR event.action == "promotion")
+            | SORT @timestamp DESC
+            | LIMIT 10
+            | KEEP @timestamp, event.action, gitops.env, gitops.service_version, gitops.bundle_version, gitops.verdict
+          params: ["{{ variables.service }}"]
+          filter:
+            range:
+              "@timestamp":
+                gte: now-24h
+        on-failure:
+          continue: true
+
+      - name: context
+        type: data.set
+        with:
+          version_lines: "{% for r in steps.versions.output.values %}- {{ r[0] }}: {{ r[1] }} requests, {{ r[2] }} errors ({{ r[3] | times: 100 | round: 2 }}%), first seen {{ r[4] | date: '%H:%M UTC' }}\n{% else %}- no traffic data (query failed or returned nothing)\n{% endfor %}"
+          change_lines: "{% for r in steps.changes.output.values %}- {{ r[0] | date: '%H:%M UTC' }} {{ r[1] }}{% if r[3] %} {{ r[3] }}{% endif %}{% if r[4] %} bundle {{ r[4] }}{% endif %}{% if r[5] %} verdict {{ r[5] }}{% endif %}{% if r[2] %} ({{ r[2] }}){% endif %}\n{% else %}- no release events in the last 24 hours\n{% endfor %}"
+
+      - name: triage
+        type: ai.agent
+        agent-id: gitops-sre-remediator
+        timeout: 3m
+        with:
+          message: |-
+            An error-spike alert opened for a service. Triage it for the on-call engineer.
+            Decide whether a rollback of the version named in the alert is the right response, and say how confident you are.
+            The facts below are current; use your tools only if you need to confirm something.
+
+            Service: {{ variables.service }}
+            Version in the alert: {{ variables.version }}
+            Environment: {{ variables.environment }}
+            Alert window: {{ variables.requests }} requests, {{ variables.errors }} errors, error ratio {{ variables.error_pct }}%
+            Episode: {{ variables.episode_id }} (rule {{ variables.rule_name }}), last evaluated {{ variables.event_time }}
+
+            Error ratio by version, last 30 minutes (newest version first):
+            {{ variables.version_lines }}
+            Recent release and promotion events:
+            {{ variables.change_lines }}
+            summary: two or three plain sentences with the numbers that matter.
+            likely_cause: one short phrase of at most 15 words, for example "the 2.5.1 release".
+            recommendation: rollback when a recent version is clearly worse than the version before it, otherwise monitor.
+          schema:
+            type: object
+            properties:
+              summary:
+                type: string
+              likely_cause:
+                type: string
+              recommendation:
+                type: string
+                enum: ["rollback", "monitor"]
+              confidence:
+                type: string
+                enum: ["high", "medium", "low"]
+            required: ["summary", "likely_cause", "recommendation", "confidence"]
+        on-failure:
+          continue: true
+
+      - name: assessment
+        type: data.set
+        with:
+          agent_answered: "${{ steps.triage.output.structured_output.summary != nil }}"
+          summary: "{% if steps.triage.output.structured_output.summary %}{{ steps.triage.output.structured_output.summary }}{% else %}Errors on {{ variables.service }} reached {{ variables.error_pct }}% ({{ variables.errors }} of {{ variables.requests }} requests) on version {{ variables.version }}. The SRE agent did not answer, so this summary comes from the alert alone.{% endif %}"
+          likely_cause: "{% if steps.triage.output.structured_output.likely_cause %}{{ steps.triage.output.structured_output.likely_cause }}{% else %}Not assessed; the alert names version {{ variables.version }}{% endif %}"
+          recommendation: "{{ steps.triage.output.structured_output.recommendation | default: 'rollback' }}"
+          confidence: "{{ steps.triage.output.structured_output.confidence | default: 'low' }}"
+
+      - name: record_detected
+        type: elasticsearch.index
+        with:
+          index: gitops-events
+          id: "remediation-{{ execution.id }}-detected"
+          op_type: create
+          document:
+            "@timestamp": "{{ now | date: '%Y-%m-%dT%H:%M:%S.%LZ' }}"
+            message: "{{ variables.service }} {{ variables.version }} error spike detected; agent recommends {{ variables.recommendation }} ({{ variables.confidence }} confidence)"
+            event:
+              action: remediation
+              outcome: unknown
+            gitops:
+              env: "{{ variables.environment }}"
+              service: "{{ variables.service }}"
+              service_version: "{{ variables.version }}"
+              details:
+                stage: detected
+                episode_id: "{{ variables.episode_id }}"
+                rule_id: "{{ variables.rule_id }}"
+                requests: "${{ variables.requests }}"
+                errors: "${{ variables.errors }}"
+                error_ratio: "${{ variables.error_ratio }}"
+                recommendation: "{{ variables.recommendation }}"
+                confidence: "{{ variables.confidence }}"
+                likely_cause: "{{ variables.likely_cause }}"
+                agent_answered: "${{ variables.agent_answered }}"
+                dry_run: "${{ inputs.dry_run }}"
+                execution_id: "{{ execution.id }}"
+                execution_url: "{{ execution.url }}"
+        on-failure:
+          continue: true
+
+      - name: servicenow_open
+        type: servicenow
+        if: "not inputs.dry_run: true"
+        connector-id: 846af0d6-5963-4c2d-b510-f48d525999f8
+        timeout: 2m
+        with:
+          subAction: pushToService
+          subActionParams:
+            incident:
+              short_description: "[GITOPS-DEMO] {{ variables.service }} {{ variables.version }} error spike"
+              description: "Elastic opened this incident for an error spike on {{ variables.service }} {{ variables.version }} in {{ variables.environment }}: {{ variables.errors }} errors in {{ variables.requests }} requests ({{ variables.error_pct }}%). SRE agent: {{ variables.summary }} Likely cause: {{ variables.likely_cause }}. Recommendation: {{ variables.recommendation }} ({{ variables.confidence }} confidence). Links to the alert episode and the remediation run are in the work notes."
+              severity: "1"
+              urgency: "1"
+              impact: "2"
+              correlation_id: "{{ variables.episode_id }}"
+              correlation_display: Elastic Alerting v2 episode
+            comments:
+              - commentId: elastic-links
+                comment: "[code]<b>Elastic</b>: <a href='{{ variables.episode_url }}' target='_blank'>Open the alert episode</a> &middot; <a href='{{ execution.url }}' target='_blank'>Open the remediation run</a>[/code]"
+        on-failure:
+          retry:
+            max-attempts: 1
+            delay: 10s
+          continue: true
+      - name: servicenow_open_dry_run
+        type: console
+        if: "inputs.dry_run: true"
+        with:
+          message: "Dry run: would open ServiceNow incident '[GITOPS-DEMO] {{ variables.service }} {{ variables.version }} error spike' with correlation_id {{ variables.episode_id }}"
+
+      - name: pagerduty_trigger
+        type: pagerduty
+        if: "not inputs.dry_run: true"
+        connector-id: 49d5a547-b980-426b-a5a4-f00f3ab6e473
+        timeout: 1m
+        with:
+          eventAction: trigger
+          dedupKey: "{{ variables.episode_id }}"
+          summary: "[GITOPS-DEMO] {{ variables.service }} {{ variables.version }} error spike: {{ variables.error_pct }}% errors in {{ variables.environment }}"
+          severity: critical
+          source: Elastic Observability
+          component: "{{ variables.service }}"
+          group: "{{ variables.environment }}"
+          class: error spike
+          customDetails:
+            version: "{{ variables.version }}"
+            requests: "${{ variables.requests }}"
+            errors: "${{ variables.errors }}"
+            error_ratio: "${{ variables.error_ratio }}"
+            recommendation: "{{ variables.recommendation }}"
+            confidence: "{{ variables.confidence }}"
+            summary: "{{ variables.summary }}"
+          links:
+            - href: "{{ variables.episode_url }}"
+              text: Open the alert episode in Elastic
+            - href: "{{ execution.url }}"
+              text: Approve or decline the rollback in Elastic
+        on-failure:
+          continue: true
+      - name: pagerduty_trigger_dry_run
+        type: console
+        if: "inputs.dry_run: true"
+        with:
+          message: "Dry run: would trigger PagerDuty with dedupKey {{ variables.episode_id }}"
+
+      - name: approval_card_actions
+        type: data.parseJson
+        source: "[{\"type\":\"Action.OpenUrl\",\"title\":\"Approve rollback\",\"url\":{{ execution.url | json }},\"style\":\"positive\"},{\"type\":\"Action.OpenUrl\",\"title\":\"Open episode\",\"url\":{{ variables.episode_url | json }}}{% if steps.servicenow_open.output.url %},{\"type\":\"Action.OpenUrl\",\"title\":\"Open incident\",\"url\":{{ steps.servicenow_open.output.url | json }}}{% endif %}]"
+      - name: approval_card
+        type: data.set
+        with:
+          card:
+            type: AdaptiveCard
+            $schema: http://adaptivecards.io/schemas/adaptive-card.json
+            version: "1.4"
+            msteams:
+              width: Full
+            body:
+              - type: Container
+                style: warning
+                bleed: true
+                items:
+                  - type: ColumnSet
+                    columns:
+                      - type: Column
+                        width: auto
+                        verticalContentAlignment: Center
+                        items:
+                          - type: Image
+                            url: https://avatars.githubusercontent.com/u/6764390?s=96&v=4
+                            width: 40px
+                            altText: Elastic
+                      - type: Column
+                        width: stretch
+                        verticalContentAlignment: Center
+                        items:
+                          - type: TextBlock
+                            text: "SRE AGENT  ·  APPROVAL NEEDED"
+                            weight: Bolder
+                            size: Small
+                            color: Dark
+                            spacing: None
+                          - type: TextBlock
+                            text: "[GITOPS-DEMO] Approve rollback? · {{ variables.service }} {{ variables.version }}"
+                            weight: Bolder
+                            size: Large
+                            wrap: true
+                            spacing: None
+              - type: TextBlock
+                text: "{{ variables.environment }}  ·  episode opened {{ variables.event_time }}"
+                isSubtle: true
+                wrap: true
+                spacing: Medium
+              - type: TextBlock
+                text: "{{ variables.summary }}"
+                wrap: true
+                spacing: Medium
+              - type: FactSet
+                spacing: Small
+                facts:
+                  - title: Likely cause
+                    value: "{{ variables.likely_cause }}"
+                  - title: Recommendation
+                    value: "{% if variables.recommendation == 'rollback' %}Roll back {{ variables.version }}{% else %}Keep watching{% endif %}"
+                  - title: Confidence
+                    value: "{{ variables.confidence | capitalize }}"
+                  - title: Episode
+                    value: "{{ variables.episode_id }}"
+                  - title: ServiceNow
+                    value: "{% if steps.servicenow_open.output.title %}{{ steps.servicenow_open.output.title }} opened{% elsif inputs.dry_run %}not opened (dry run){% else %}not opened{% endif %}"
+                  - title: PagerDuty
+                    value: "{% if steps.pagerduty_trigger.error == nil and inputs.dry_run != true %}Triggered · critical{% elsif inputs.dry_run %}not paged (dry run){% else %}not paged{% endif %}"
+              - type: TextBlock
+                text: Nothing rolls back until someone approves.
+                isSubtle: true
+                wrap: true
+                spacing: Medium
+                size: Small
+            actions: "${{ steps.approval_card_actions.output }}"
+      - name: teams_approval
+        type: teams
+        if: "not inputs.dry_run: true"
+        connector-id: abd684be-bb1c-4dec-81ba-ce4e6922bad3
+        timeout: 1m
+        with:
+          message: "{{ variables.card | json }}"
+        on-failure:
+          continue: true
+      - name: teams_approval_dry_run
+        type: console
+        if: "inputs.dry_run: true"
+        with:
+          message: "{{ variables.card | json }}"
+
+      # A timed-out approval completes with approved false, so only an explicit approval rolls back.
+      - name: approve_rollback
+        type: waitForApproval
+        timeout: 30m
+        with:
+          message: "Roll back {{ variables.service }} {{ variables.version }} in {{ variables.environment }}? {{ variables.summary }}"
+          approveLabel: Roll back
+          rejectLabel: Keep release
+
+      - name: decision
+        type: if
+        condition: "steps.approve_rollback.output.response.approved: true"
+        steps:
+          - name: github_rollback
+            type: http
+            if: "not inputs.dry_run: true"
+            connector-id: e5ab5e5b-6f2b-488a-b140-a474987298bf
+            timeout: 1m
+            with:
+              method: POST
+              path: /repos/codingogre/elastic-obs-gitops/dispatches
+              headers:
+                Accept: application/vnd.github+json
+                X-GitHub-Api-Version: "2022-11-28"
+              body:
+                event_type: rollback
+                client_payload:
+                  service: "{{ variables.service }}"
+                  version: "{{ variables.version }}"
+                  episode_id: "{{ variables.episode_id }}"
+                  environment: "{{ variables.environment }}"
+                  execution_id: "{{ execution.id }}"
+            on-failure:
+              continue: true
+          - name: github_rollback_dry_run
+            type: console
+            if: "inputs.dry_run: true"
+            with:
+              message: "Dry run: would send repository_dispatch rollback for {{ variables.service }} {{ variables.version }} (episode {{ variables.episode_id }})"
+          - name: record_approved
+            type: elasticsearch.index
+            with:
+              index: gitops-events
+              id: "remediation-{{ execution.id }}-approved"
+              op_type: create
+              document:
+                "@timestamp": "{{ now | date: '%Y-%m-%dT%H:%M:%S.%LZ' }}"
+                message: "Rollback of {{ variables.service }} {{ variables.version }} approved by {{ steps.approve_rollback.output.respondedBy }}{% if steps.github_rollback.error %}; the GitHub dispatch failed{% else %}; rollback requested{% endif %}"
+                event:
+                  action: remediation
+                  outcome: "{% if steps.github_rollback.error %}failure{% else %}success{% endif %}"
+                gitops:
+                  env: "{{ variables.environment }}"
+                  service: "{{ variables.service }}"
+                  service_version: "{{ variables.version }}"
+                  actor: "{{ steps.approve_rollback.output.respondedBy }}"
+                  details:
+                    stage: approved
+                    approved: true
+                    rollback_requested: "${{ steps.github_rollback.error == nil }}"
+                    dispatch_error: "{{ steps.github_rollback.error.message | default: '' }}"
+                    episode_id: "{{ variables.episode_id }}"
+                    dry_run: "${{ inputs.dry_run }}"
+                    execution_id: "{{ execution.id }}"
+                    execution_url: "{{ execution.url }}"
+            on-failure:
+              continue: true
+        else:
+          - name: record_declined
+            type: elasticsearch.index
+            with:
+              index: gitops-events
+              id: "remediation-{{ execution.id }}-declined"
+              op_type: create
+              document:
+                "@timestamp": "{{ now | date: '%Y-%m-%dT%H:%M:%S.%LZ' }}"
+                message: "Rollback of {{ variables.service }} {{ variables.version }} not approved{% if steps.approve_rollback.output.respondedBy %} by {{ steps.approve_rollback.output.respondedBy }}{% endif %}"
+                event:
+                  action: remediation
+                  outcome: unknown
+                gitops:
+                  env: "{{ variables.environment }}"
+                  service: "{{ variables.service }}"
+                  service_version: "{{ variables.version }}"
+                  actor: "{{ steps.approve_rollback.output.respondedBy | default: '' }}"
+                  details:
+                    stage: declined
+                    approved: false
+                    rollback_requested: false
+                    timed_out: "${{ steps.approve_rollback.output.respondedAt == nil }}"
+                    episode_id: "{{ variables.episode_id }}"
+                    dry_run: "${{ inputs.dry_run }}"
+                    execution_id: "{{ execution.id }}"
+                    execution_url: "{{ execution.url }}"
+            on-failure:
+              continue: true
+
+  # ----------------------------------------------------------------- close --
+  - name: when_inactive
+    type: if
+    condition: "inputs.payload.episodes.0.episode_status: inactive"
+    steps:
+      - name: episode_history
+        type: elasticsearch.search
+        with:
+          index: gitops-events
+          ignore_unavailable: true
+          allow_no_indices: true
+          size: 10
+          sort:
+            - "@timestamp": desc
+          query:
+            bool:
+              filter:
+                - term:
+                    event.action: remediation
+                - term:
+                    gitops.details.episode_id: "{{ variables.episode_id }}"
+        on-failure:
+          continue: true
+
+      - name: recovered
+        type: data.set
+        with:
+          service: "{% assign found = '' %}{% for h in steps.episode_history.output.hits.hits %}{% if found == '' and h._source.gitops.service %}{% assign found = h._source.gitops.service %}{% endif %}{% endfor %}{% if found != '' %}{{ found }}{% else %}{{ variables.rule_id | remove_first: 'svc-' | remove: '-error-spike' }}{% endif %}"
+          version: "{% assign found = '' %}{% for h in steps.episode_history.output.hits.hits %}{% if found == '' and h._source.gitops.service_version %}{% assign found = h._source.gitops.service_version %}{% endif %}{% endfor %}{{ found }}"
+          rollback_requested: "{% assign n = 0 %}{% for h in steps.episode_history.output.hits.hits %}{% if h._source.gitops.details.stage == 'approved' %}{% assign n = n | plus: 1 %}{% endif %}{% endfor %}{% if n > 0 %}yes{% else %}no{% endif %}"
+
+      - name: current_errors
+        type: elasticsearch.esql.query
+        timeout: 1m
+        with:
+          query: >-
+            FROM traces-*
+            | WHERE service.name == ? AND processor.event == "transaction"
+            | STATS requests = COUNT(*), errors = COUNT(*) WHERE event.outcome == "failure"
+            | EVAL error_ratio = CASE(requests > 0, ROUND(TO_DOUBLE(errors) / requests, 4), null)
+          params: ["{{ variables.service }}"]
+          filter:
+            range:
+              "@timestamp":
+                gte: now-5m
+        on-failure:
+          continue: true
+
+      - name: servicenow_close
+        type: servicenow
+        if: "not inputs.dry_run: true"
+        connector-id: 846af0d6-5963-4c2d-b510-f48d525999f8
+        timeout: 2m
+        with:
+          subAction: closeIncident
+          subActionParams:
+            incident:
+              correlation_id: "{{ variables.episode_id }}"
+              externalId: null
+        on-failure:
+          retry:
+            max-attempts: 1
+            delay: 10s
+          continue: true
+      - name: servicenow_close_dry_run
+        type: console
+        if: "inputs.dry_run: true"
+        with:
+          message: "Dry run: would close the ServiceNow incident with correlation_id {{ variables.episode_id }}"
+
+      - name: pagerduty_resolve
+        type: pagerduty
+        if: "not inputs.dry_run: true"
+        connector-id: 49d5a547-b980-426b-a5a4-f00f3ab6e473
+        timeout: 1m
+        with:
+          eventAction: resolve
+          dedupKey: "{{ variables.episode_id }}"
+        on-failure:
+          continue: true
+      - name: pagerduty_resolve_dry_run
+        type: console
+        if: "inputs.dry_run: true"
+        with:
+          message: "Dry run: would resolve PagerDuty dedupKey {{ variables.episode_id }}"
+
+      - name: all_clear_card
+        type: data.set
+        with:
+          card:
+            type: AdaptiveCard
+            $schema: http://adaptivecards.io/schemas/adaptive-card.json
+            version: "1.4"
+            msteams:
+              width: Full
+            body:
+              - type: Container
+                style: good
+                bleed: true
+                items:
+                  - type: ColumnSet
+                    columns:
+                      - type: Column
+                        width: auto
+                        verticalContentAlignment: Center
+                        items:
+                          - type: Image
+                            url: https://avatars.githubusercontent.com/u/6764390?s=96&v=4
+                            width: 40px
+                            altText: Elastic
+                      - type: Column
+                        width: stretch
+                        verticalContentAlignment: Center
+                        items:
+                          - type: TextBlock
+                            text: "ELASTIC ALERT  ·  RECOVERED"
+                            weight: Bolder
+                            size: Small
+                            color: Dark
+                            spacing: None
+                          - type: TextBlock
+                            text: "[GITOPS-DEMO] Recovered · {{ variables.service }}"
+                            weight: Bolder
+                            size: Large
+                            wrap: true
+                            spacing: None
+              - type: TextBlock
+                text: "{{ variables.environment }}  ·  {% if variables.rollback_requested == 'yes' %}rolled back from {{ variables.version }}{% elsif variables.version != '' %}{{ variables.version }} error spike is over{% else %}error spike is over{% endif %}"
+                isSubtle: true
+                wrap: true
+                spacing: Medium
+              - type: FactSet
+                spacing: Small
+                facts:
+                  - title: Error ratio
+                    value: "{% if steps.current_errors.output.values[0][2] == nil %}n/a{% else %}{{ steps.current_errors.output.values[0][2] | times: 100 | round: 2 }}%  (last 5 min){% endif %}"
+                  - title: ServiceNow
+                    value: "{% if steps.servicenow_close.output.title %}{{ steps.servicenow_close.output.title }} closed{% elsif inputs.dry_run %}not closed (dry run){% elsif steps.servicenow_close.error %}close failed{% else %}closed{% endif %}"
+                  - title: PagerDuty
+                    value: "{% if inputs.dry_run %}not resolved (dry run){% elsif steps.pagerduty_resolve.error %}resolve failed{% else %}Incident resolved{% endif %}"
+                  - title: Recovered
+                    value: "{{ variables.event_time }}"
+              - type: TextBlock
+                text: One recovery closed the incident, resolved the page and posted this all-clear.
+                isSubtle: true
+                wrap: true
+                spacing: Medium
+                size: Small
+            actions:
+              - type: Action.OpenUrl
+                title: Open in Elastic
+                url: "{{ variables.episode_url }}"
+                style: positive
+      - name: teams_all_clear
+        type: teams
+        if: "not inputs.dry_run: true"
+        connector-id: abd684be-bb1c-4dec-81ba-ce4e6922bad3
+        timeout: 1m
+        with:
+          message: "{{ variables.card | json }}"
+        on-failure:
+          continue: true
+      - name: teams_all_clear_dry_run
+        type: console
+        if: "inputs.dry_run: true"
+        with:
+          message: "{{ variables.card | json }}"
+
+      - name: record_recovered
+        type: elasticsearch.index
+        with:
+          index: gitops-events
+          id: "remediation-{{ execution.id }}-recovered"
+          op_type: create
+          document:
+            "@timestamp": "{{ now | date: '%Y-%m-%dT%H:%M:%S.%LZ' }}"
+            message: "{{ variables.service }} recovered; incident closed and page resolved"
+            event:
+              action: remediation
+              outcome: success
+            gitops:
+              env: "{{ variables.environment }}"
+              service: "{{ variables.service }}"
+              service_version: "{{ variables.version }}"
+              details:
+                stage: recovered
+                episode_id: "{{ variables.episode_id }}"
+                servicenow_closed: "${{ steps.servicenow_close.error == nil }}"
+                pagerduty_resolved: "${{ steps.pagerduty_resolve.error == nil }}"
+                dry_run: "${{ inputs.dry_run }}"
+                execution_id: "{{ execution.id }}"
+                execution_url: "{{ execution.url }}"
+        on-failure:
+          continue: true
+
+  # Holds the concurrency slot so a duplicate dispatch arriving a few seconds later is dropped.
+  - name: hold_dedupe_window
+    type: wait
+    with:
+      duration: 20s
+
+  - name: result
+    type: workflow.output
+    with:
+      episode_id: "{{ variables.episode_id }}"
+      episode_status: "{{ variables.episode_status }}"
+      service: "{{ variables.service }}"
+      version: "{{ variables.version }}"
+      recommendation: "{{ variables.recommendation | default: '' }}"
+      confidence: "{{ variables.confidence | default: '' }}"
+      approved: "${{ steps.approve_rollback.output.response.approved | default: false }}"
+      servicenow_incident: "{{ steps.servicenow_open.output.title | default: steps.servicenow_close.output.title | default: '' }}"
+      dry_run: "${{ inputs.dry_run }}"

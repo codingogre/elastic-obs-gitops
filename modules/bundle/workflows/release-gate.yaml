@@ -1,0 +1,450 @@
+version: "1"
+name: Release gate
+description: >-
+  Evaluates a release against the objectives its gate declares as code. App mode compares a candidate version
+  with its objectives and a baseline version; config mode checks the service's SLOs. Records a gate_evaluated
+  event, explains the verdict and posts a card.
+enabled: true
+tags:
+  - gitops
+  - release-gate
+triggers:
+  - type: manual
+    inputs:
+      properties:
+        gate_id:
+          type: string
+          description: Gate definition ID in gitops-gates, for example gate-grid-dispatch.
+        mode:
+          type: string
+          enum: ["app", "config"]
+          default: app
+          description: "app: judge a candidate service version. config: judge an observability bundle release by SLO health."
+        service:
+          type: string
+          default: ""
+          description: Service name. Empty uses the gate's service.
+        version:
+          type: string
+          description: Candidate service version (app mode) or bundle version (config mode).
+        baseline_version:
+          type: string
+          default: ""
+          description: Version currently serving traffic, compared with the candidate in app mode.
+        window:
+          type: string
+          default: 10m
+          description: Look-back window such as 10m or 1h. Empty uses the gate's window.
+        environment:
+          type: string
+          default: ""
+          description: dev or prod. Empty derives it from the Kibana space.
+        notify:
+          type: string
+          enum: ["fail", "always", "never"]
+          default: fail
+          description: When to post a Teams card.
+        run_url:
+          type: string
+          default: ""
+          description: Link to the pipeline run that asked for the gate.
+      required: ["gate_id", "version"]
+steps:
+  # 1. The gate definition is a Terraform resource, stored as a document in gitops-gates.
+  - name: read_gate
+    type: elasticsearch.search
+    with:
+      index: gitops-gates
+      ignore_unavailable: true
+      allow_no_indices: true
+      size: 1
+      query:
+        ids:
+          values: ["{{ inputs.gate_id }}"]
+
+  - name: gate_missing
+    type: if
+    condition: "steps.read_gate.output.hits.total.value < 1"
+    steps:
+      - name: fail_gate_missing
+        type: workflow.fail
+        with:
+          message: "Release gate '{{ inputs.gate_id }}' is not defined: gitops-gates has no document with this ID. Apply the bundle that declares the gate, then run it again."
+          reason: gate_not_found
+
+  - name: setup
+    type: data.set
+    with:
+      gate: "${{ steps.read_gate.output.hits.hits[0]._source }}"
+      service: "{% if inputs.service != '' %}{{ inputs.service }}{% else %}{{ steps.read_gate.output.hits.hits[0]._source.service }}{% endif %}"
+      window: "{% if inputs.window != '' %}{{ inputs.window }}{% elsif steps.read_gate.output.hits.hits[0]._source.window %}{{ steps.read_gate.output.hits.hits[0]._source.window }}{% else %}10m{% endif %}"
+      environment: "{% if inputs.environment != '' %}{{ inputs.environment }}{% elsif workflow.spaceId == 'default' %}prod{% else %}dev{% endif %}"
+      version_filter: "{% if inputs.mode == 'app' %}{{ inputs.version }}{% endif %}"
+      er_max: "${{ steps.read_gate.output.hits.hits[0]._source.objectives | where: 'name', 'error_ratio' | map: 'max' | first }}"
+      er_cmp: "${{ steps.read_gate.output.hits.hits[0]._source.objectives | where: 'name', 'error_ratio' | map: 'compare_to_baseline' | first | default: false }}"
+      p95_max: "${{ steps.read_gate.output.hits.hits[0]._source.objectives | where: 'name', 'p95_ms' | map: 'max' | first }}"
+      p95_cmp: "${{ steps.read_gate.output.hits.hits[0]._source.objectives | where: 'name', 'p95_ms' | map: 'compare_to_baseline' | first | default: false }}"
+      slo_ids: "${{ steps.read_gate.output.hits.hits[0]._source.slo_ids | default: [] }}"
+      slo_lines: ""
+      slo_fact: ""
+
+  # 2. Candidate traffic. App mode: this version only. Config mode: every version of the service.
+  - name: candidate_stats
+    type: elasticsearch.esql.query
+    timeout: 2m
+    with:
+      query: >-
+        FROM traces-*
+        | WHERE service.name == ? AND (? == "" OR service.version == ?) AND processor.event == "transaction"
+        | STATS requests = COUNT(*), errors = COUNT(*) WHERE event.outcome == "failure", p95_us = PERCENTILE(transaction.duration.us, 95)
+        | EVAL error_ratio = CASE(requests > 0, ROUND(TO_DOUBLE(errors) / requests, 5), null), p95_ms = ROUND(p95_us / 1000.0, 1)
+        | KEEP requests, errors, error_ratio, p95_ms
+      params: ["{{ variables.service }}", "{{ variables.version_filter }}", "{{ variables.version_filter }}"]
+      filter:
+        range:
+          "@timestamp":
+            gte: "now-{{ variables.window }}"
+    on-failure:
+      retry:
+        max-attempts: 2
+        delay: 5s
+      continue: true
+
+  # 3. Baseline traffic (app mode with a baseline version).
+  - name: has_baseline
+    type: if
+    condition: "${{ inputs.mode == 'app' and inputs.baseline_version != '' }}"
+    steps:
+      - name: baseline_stats
+        type: elasticsearch.esql.query
+        timeout: 2m
+        with:
+          query: >-
+            FROM traces-*
+            | WHERE service.name == ? AND service.version == ? AND processor.event == "transaction"
+            | STATS requests = COUNT(*), errors = COUNT(*) WHERE event.outcome == "failure", p95_us = PERCENTILE(transaction.duration.us, 95)
+            | EVAL error_ratio = CASE(requests > 0, ROUND(TO_DOUBLE(errors) / requests, 5), null), p95_ms = ROUND(p95_us / 1000.0, 1)
+            | KEEP requests, errors, error_ratio, p95_ms
+          params: ["{{ variables.service }}", "{{ inputs.baseline_version }}"]
+          filter:
+            range:
+              "@timestamp":
+                gte: "now-{{ variables.window }}"
+        on-failure:
+          retry:
+            max-attempts: 2
+            delay: 5s
+          continue: true
+
+  # 4. SLO status for every SLO the gate names (gating in config mode, context in app mode).
+  - name: check_slos
+    type: foreach
+    foreach: "${{ variables.slo_ids }}"
+    steps:
+      - name: get_slo
+        type: kibana.request
+        with:
+          method: GET
+          path: "/s/{{ workflow.spaceId }}/api/observability/slos/{{ foreach.item }}"
+        on-failure:
+          continue: true
+      - name: add_slo
+        type: data.set
+        with:
+          slo_lines: "{{ variables.slo_lines }}{% if steps.get_slo.error %}{{ foreach.item }}::MISSING::{{ foreach.item }}::0::0::0::0{% else %}{{ foreach.item }}::{{ steps.get_slo.output.summary.status }}::{{ steps.get_slo.output.name }}::{{ steps.get_slo.output.summary.sliValue }}::{{ steps.get_slo.output.objective.target }}::{{ steps.get_slo.output.summary.fiveMinuteBurnRate | default: 0 }}::{{ steps.get_slo.output.summary.oneHourBurnRate | default: 0 }}{% endif %}||"
+          slo_fact: "{% if variables.slo_fact != '' %}{{ variables.slo_fact }};  {% endif %}{% if steps.get_slo.error %}{{ foreach.item }} not found{% else %}{{ steps.get_slo.output.name }} {{ steps.get_slo.output.summary.status | downcase | replace: '_', ' ' }}{% endif %}"
+
+  - name: numbers
+    type: data.set
+    with:
+      measured: "${{ steps.candidate_stats.error == nil }}"
+      requests: "${{ steps.candidate_stats.output.values[0][0] | default: 0 }}"
+      errors: "${{ steps.candidate_stats.output.values[0][1] | default: 0 }}"
+      error_ratio: "${{ steps.candidate_stats.output.values[0][2] }}"
+      p95_ms: "${{ steps.candidate_stats.output.values[0][3] }}"
+      baseline_requests: "${{ steps.baseline_stats.output.values[0][0] | default: 0 }}"
+      baseline_error_ratio: "${{ steps.baseline_stats.output.values[0][2] }}"
+      baseline_p95_ms: "${{ steps.baseline_stats.output.values[0][3] }}"
+
+  # 5. Findings, one per line: fail::, warn:: or info:: followed by a sentence.
+  - name: assess
+    type: data.set
+    with:
+      findings: |-
+        {%- assign min_requests = 20 -%}
+        {%- if inputs.mode == 'app' -%}
+          {%- assign base_ok = false -%}
+          {%- if inputs.baseline_version != '' and variables.baseline_requests >= min_requests -%}{%- assign base_ok = true -%}{%- endif -%}
+          {%- if variables.measured != true -%}
+            warn::The traffic query for {{ variables.service }} {{ inputs.version }} failed, so the release could not be measured||
+          {%- elsif variables.requests < min_requests -%}
+            warn::Not enough traffic: {{ variables.service }} {{ inputs.version }} served {{ variables.requests }} requests in the last {{ variables.window }}, and the gate needs at least {{ min_requests }}||
+          {%- else -%}
+            {%- if variables.er_max != nil -%}
+              {%- assign er_pct = variables.error_ratio | times: 100 | round: 2 -%}
+              {%- assign er_max_pct = variables.er_max | times: 100 | round: 2 -%}
+              {%- capture er_base -%}{%- if base_ok %} (baseline {{ inputs.baseline_version }}: {{ variables.baseline_error_ratio | times: 100 | round: 2 }}%){%- endif -%}{%- endcapture -%}
+              {%- if variables.error_ratio > variables.er_max -%}
+                {%- if variables.er_cmp and base_ok and variables.baseline_error_ratio > variables.er_max -%}
+                  warn::Error ratio {{ er_pct }}% is above the {{ er_max_pct }}% objective, but baseline {{ inputs.baseline_version }} is above it too ({{ variables.baseline_error_ratio | times: 100 | round: 2 }}%)||
+                {%- else -%}
+                  fail::Error ratio {{ er_pct }}% is above the {{ er_max_pct }}% objective{{ er_base }}||
+                {%- endif -%}
+              {%- else -%}
+                info::Error ratio {{ er_pct }}% is within the {{ er_max_pct }}% objective{{ er_base }}||
+              {%- endif -%}
+            {%- endif -%}
+            {%- if variables.p95_max != nil -%}
+              {%- assign p95_now = variables.p95_ms | round -%}
+              {%- capture p95_base -%}{%- if base_ok %} (baseline {{ inputs.baseline_version }}: {{ variables.baseline_p95_ms | round }} ms){%- endif -%}{%- endcapture -%}
+              {%- if variables.p95_ms > variables.p95_max -%}
+                {%- if variables.p95_cmp and base_ok and variables.baseline_p95_ms > variables.p95_max -%}
+                  warn::p95 latency {{ p95_now }} ms is above the {{ variables.p95_max }} ms objective, but baseline {{ inputs.baseline_version }} is above it too ({{ variables.baseline_p95_ms | round }} ms)||
+                {%- else -%}
+                  fail::p95 latency {{ p95_now }} ms is above the {{ variables.p95_max }} ms objective{{ p95_base }}||
+                {%- endif -%}
+              {%- else -%}
+                info::p95 latency {{ p95_now }} ms is within the {{ variables.p95_max }} ms objective{{ p95_base }}||
+              {%- endif -%}
+            {%- endif -%}
+            {%- if variables.er_max == nil and variables.p95_max == nil -%}
+              warn::Gate {{ inputs.gate_id }} declares no error_ratio or p95_ms objective||
+            {%- endif -%}
+          {%- endif -%}
+          {%- if inputs.baseline_version != '' and base_ok != true -%}
+            info::Baseline {{ inputs.baseline_version }} served {{ variables.baseline_requests }} requests in the window, too few to compare with||
+          {%- endif -%}
+        {%- else -%}
+          {%- assign slo_rows = variables.slo_lines | split: '||' -%}
+          {%- if slo_rows.size == 0 -%}
+            warn::Gate {{ inputs.gate_id }} lists no SLOs, so config mode had nothing to check||
+          {%- endif -%}
+          {%- for row in slo_rows -%}
+            {%- assign f = row | split: '::' -%}
+            {%- assign burn_5m = f[5] | plus: 0 -%}
+            {%- assign burn_1h = f[6] | plus: 0 -%}
+            {%- if f[1] == 'MISSING' -%}
+              warn::SLO {{ f[0] }} does not exist in this space||
+            {%- elsif f[1] == 'VIOLATED' -%}
+              fail::SLO {{ f[2] }} is violated: SLI {{ f[3] | times: 100 | round: 2 }}% against a {{ f[4] | times: 100 | round: 2 }}% target||
+            {%- elsif burn_5m >= 14.4 or burn_1h >= 14.4 -%}
+              fail::SLO {{ f[2] }} is burning its error budget fast (burn rate {{ burn_5m | round: 1 }}x over 5 minutes, {{ burn_1h | round: 1 }}x over 1 hour)||
+            {%- elsif f[1] == 'DEGRADING' -%}
+              warn::SLO {{ f[2] }} is degrading: SLI {{ f[3] | times: 100 | round: 2 }}% against a {{ f[4] | times: 100 | round: 2 }}% target||
+            {%- elsif f[1] == 'NO_DATA' -%}
+              warn::SLO {{ f[2] }} has no data yet||
+            {%- else -%}
+              info::SLO {{ f[2] }} is healthy: SLI {{ f[3] | times: 100 | round: 2 }}% against a {{ f[4] | times: 100 | round: 2 }}% target||
+            {%- endif -%}
+          {%- endfor -%}
+        {%- endif -%}
+
+  - name: order_findings
+    type: data.set
+    with:
+      verdict: "{% if variables.findings contains 'fail::' %}fail{% elsif variables.findings contains 'warn::' %}warn{% else %}pass{% endif %}"
+      ordered: "{% assign rows = variables.findings | split: '||' %}{% assign levels = 'fail::,warn::,info::' | split: ',' %}{% for level in levels %}{% for row in rows %}{% assign p = row | slice: 0, 6 %}{% if p == level %}{{ row | remove_first: level }}||{% endif %}{% endfor %}{% endfor %}"
+
+  - name: verdict
+    type: data.set
+    with:
+      reasons: "${{ variables.ordered | split: '||' | compact }}"
+      outcome: "{% if variables.verdict == 'pass' %}success{% elsif variables.verdict == 'fail' %}failure{% else %}unknown{% endif %}"
+      error_ratio_text: "{% if variables.error_ratio == nil %}n/a{% else %}{{ variables.error_ratio | times: 100 | round: 2 }}%{% endif %}{% if inputs.mode == 'config' %} across all versions{% endif %}{% if variables.er_max != nil %}   (max {{ variables.er_max | times: 100 | round: 2 }}%){% endif %}"
+      p95_text: "{% if variables.p95_ms == nil %}n/a{% else %}{{ variables.p95_ms | round }} ms{% endif %}{% if variables.p95_max != nil %}   (max {{ variables.p95_max }} ms){% endif %}"
+      slo_text: "{% if variables.slo_fact == '' %}none declared{% else %}{{ variables.slo_fact }}{% endif %}"
+
+  # 6. Record the verdict in the pipeline's own event stream.
+  - name: record_event
+    type: elasticsearch.index
+    with:
+      index: gitops-events
+      id: "gate-{{ execution.id }}"
+      op_type: create
+      document:
+        "@timestamp": "{{ now | date: '%Y-%m-%dT%H:%M:%S.%LZ' }}"
+        message: "Release gate {{ variables.verdict }} for {{ variables.service }} {{ inputs.version }} ({{ inputs.mode }} mode)"
+        event:
+          action: gate_evaluated
+          outcome: "{{ variables.outcome }}"
+        gitops:
+          env: "{{ variables.environment }}"
+          service: "{{ variables.service }}"
+          service_version: "{{ inputs.version }}"
+          baseline_version: "{{ inputs.baseline_version }}"
+          verdict: "{{ variables.verdict }}"
+          reasons: "${{ variables.reasons }}"
+          run_url: "{{ inputs.run_url }}"
+          details:
+            gate_id: "{{ inputs.gate_id }}"
+            mode: "{{ inputs.mode }}"
+            window: "{{ variables.window }}"
+            requests: "${{ variables.requests }}"
+            errors: "${{ variables.errors }}"
+            error_ratio: "${{ variables.error_ratio }}"
+            p95_ms: "${{ variables.p95_ms }}"
+            baseline_requests: "${{ variables.baseline_requests }}"
+            baseline_error_ratio: "${{ variables.baseline_error_ratio }}"
+            baseline_p95_ms: "${{ variables.baseline_p95_ms }}"
+            error_ratio_max: "${{ variables.er_max }}"
+            p95_ms_max: "${{ variables.p95_max }}"
+            slos: "{{ variables.slo_text }}"
+            execution_id: "{{ execution.id }}"
+            execution_url: "{{ execution.url }}"
+    on-failure:
+      continue: true
+
+  # 7. Plain-English explanation from the reviewer agent (advisory; the gate never waits on it to decide).
+  - name: explain
+    type: ai.agent
+    agent-id: gitops-reviewer
+    timeout: 3m
+    with:
+      message: |-
+        Explain this release gate result to a release manager in exactly three plain-English bullets of at most 25 words each.
+        Lead with what decided the verdict, without starting with the word Verdict. Use only the facts below. Do not call tools and do not add headings.
+
+        Service: {{ variables.service }}
+        Mode: {{ inputs.mode }} ({% if inputs.mode == 'app' %}candidate version {{ inputs.version }}{% if inputs.baseline_version != '' %} against baseline {{ inputs.baseline_version }}{% endif %}{% else %}observability bundle {{ inputs.version }}{% endif %})
+        Environment: {{ variables.environment }}
+        Window: last {{ variables.window }}
+        Verdict: {{ variables.verdict }}
+        Requests: {{ variables.requests }}, errors: {{ variables.errors }}
+        Error ratio: {{ variables.error_ratio_text }}
+        p95 latency: {{ variables.p95_text }}
+        SLOs: {{ variables.slo_text }}
+        Findings:
+        {% for r in variables.reasons %}- {{ r }}
+        {% endfor %}
+      schema:
+        type: object
+        properties:
+          bullets:
+            type: array
+            items:
+              type: string
+        required: ["bullets"]
+    on-failure:
+      continue: true
+
+  - name: explanation
+    type: data.set
+    with:
+      bullets: "${{ steps.explain.output.structured_output.bullets | default: variables.reasons }}"
+      explained_by: "{% if steps.explain.output.structured_output.bullets %}agent{% else %}gate{% endif %}"
+
+  # 8. Teams card: always on fail, on every verdict when notify is always.
+  - name: notify
+    type: if
+    condition: "inputs.notify: always or (inputs.notify: fail and variables.verdict: fail)"
+    steps:
+      - name: card_why
+        type: data.parseJson
+        source: "[{% for b in variables.bullets %}{\"type\":\"TextBlock\",\"text\":{{ b | prepend: '•  ' | json }},\"wrap\":true,\"spacing\":\"{% if forloop.first %}Small{% else %}None{% endif %}\"}{% unless forloop.last %},{% endunless %}{% endfor %}]"
+      - name: card_actions
+        type: data.parseJson
+        source: "[{% if inputs.run_url != '' %}{\"type\":\"Action.OpenUrl\",\"title\":\"Open gate run\",\"url\":{{ inputs.run_url | json }},\"style\":\"positive\"},{% endif %}{\"type\":\"Action.OpenUrl\",\"title\":\"Open in Elastic\",\"url\":{{ execution.url | json }}}]"
+      - name: card
+        type: data.set
+        with:
+          card:
+            type: AdaptiveCard
+            $schema: http://adaptivecards.io/schemas/adaptive-card.json
+            version: "1.4"
+            msteams:
+              width: Full
+            body:
+              - type: Container
+                style: "{% if variables.verdict == 'fail' %}attention{% elsif variables.verdict == 'warn' %}warning{% else %}good{% endif %}"
+                bleed: true
+                items:
+                  - type: ColumnSet
+                    columns:
+                      - type: Column
+                        width: auto
+                        verticalContentAlignment: Center
+                        items:
+                          - type: Image
+                            url: https://avatars.githubusercontent.com/u/6764390?s=96&v=4
+                            width: 40px
+                            altText: Elastic
+                      - type: Column
+                        width: stretch
+                        verticalContentAlignment: Center
+                        items:
+                          - type: TextBlock
+                            text: "RELEASE GATE  ·  {{ variables.verdict | upcase }}"
+                            weight: Bolder
+                            size: Small
+                            color: "{% if variables.verdict == 'fail' %}Attention{% else %}Dark{% endif %}"
+                            spacing: None
+                          - type: TextBlock
+                            text: "[GITOPS-DEMO] {% if variables.verdict == 'fail' %}Release blocked{% elsif variables.verdict == 'warn' %}Release needs a look{% else %}Release passed{% endif %} · {{ variables.service }} {% if inputs.mode == 'config' %}(bundle {{ inputs.version }}){% else %}{{ inputs.version }}{% endif %}"
+                            weight: Bolder
+                            size: Large
+                            wrap: true
+                            spacing: None
+              - type: TextBlock
+                text: "{{ variables.environment }}  ·  {% if inputs.mode == 'app' %}candidate {{ inputs.version }}{% if inputs.baseline_version != '' %} against baseline {{ inputs.baseline_version }}{% endif %}{% else %}bundle {{ inputs.version }}, SLO check{% endif %}  ·  {{ variables.window }} window"
+                isSubtle: true
+                wrap: true
+                spacing: Medium
+              - type: FactSet
+                spacing: Small
+                facts:
+                  - title: Error ratio
+                    value: "{{ variables.error_ratio_text }}"
+                  - title: p95 latency
+                    value: "{{ variables.p95_text }}"
+                  - title: SLO
+                    value: "{{ variables.slo_text }}"
+                  - title: Verdict
+                    value: "{{ variables.verdict }}"
+              - type: TextBlock
+                text: Why
+                weight: Bolder
+                spacing: Medium
+              - type: Container
+                spacing: None
+                items: "${{ steps.card_why.output }}"
+              - type: TextBlock
+                text: "{% if variables.verdict == 'fail' %}The release stopped. {% if inputs.baseline_version != '' %}{{ inputs.baseline_version }} keeps serving every request.{% else %}Nothing was promoted.{% endif %}{% elsif variables.verdict == 'warn' %}The gate could not give a clear pass. Check the findings before going further.{% else %}Every objective held. The release can go ahead.{% endif %}"
+                isSubtle: true
+                wrap: true
+                spacing: Medium
+                size: Small
+            actions: "${{ steps.card_actions.output }}"
+      - name: post_card
+        type: teams
+        connector-id: abd684be-bb1c-4dec-81ba-ce4e6922bad3
+        with:
+          message: "{{ variables.card | json }}"
+        on-failure:
+          continue: true
+
+  # 9. The verdict for the caller (scripts/gate.py reads context.output).
+  - name: result
+    type: workflow.output
+    with:
+      verdict: "{{ variables.verdict }}"
+      reasons: "${{ variables.reasons }}"
+      explanation: "${{ variables.bullets }}"
+      explained_by: "{{ variables.explained_by }}"
+      gate_id: "{{ inputs.gate_id }}"
+      mode: "{{ inputs.mode }}"
+      service: "{{ variables.service }}"
+      version: "{{ inputs.version }}"
+      baseline_version: "{{ inputs.baseline_version }}"
+      environment: "{{ variables.environment }}"
+      window: "{{ variables.window }}"
+      requests: "${{ variables.requests }}"
+      errors: "${{ variables.errors }}"
+      error_ratio: "${{ variables.error_ratio }}"
+      p95_ms: "${{ variables.p95_ms }}"
+      baseline_requests: "${{ variables.baseline_requests }}"
+      baseline_error_ratio: "${{ variables.baseline_error_ratio }}"
+      baseline_p95_ms: "${{ variables.baseline_p95_ms }}"
+      error_ratio_max: "${{ variables.er_max }}"
+      p95_ms_max: "${{ variables.p95_max }}"
+      slos: "{{ variables.slo_text }}"
+      event_id: "gate-{{ execution.id }}"

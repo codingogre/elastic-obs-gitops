@@ -1,0 +1,7 @@
+FROM traces-*
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend
+    AND service.name == "${service}" AND kind == "Server"
+| STATS p95_us = PERCENTILE(transaction.duration.us, 95) BY bucket = BUCKET(@timestamp, 75, ?_tstart, ?_tend)
+| EVAL p95_ms = ROUND(p95_us / 1000.0, 1), release_max_p95_ms = ${max_p95_ms}
+| KEEP bucket, p95_ms, release_max_p95_ms
+| SORT bucket

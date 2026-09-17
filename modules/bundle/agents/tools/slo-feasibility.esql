@@ -1,0 +1,22 @@
+FROM traces-*
+| WHERE @timestamp >= NOW() - 7 days
+    AND service.name == ?service
+    AND kind == "Server"
+| EVAL hour = DATE_TRUNC(1 hour, @timestamp)
+| STATS requests = COUNT(*),
+        errors = COUNT(*) WHERE status.code == "Error",
+        hours_with_data = COUNT_DISTINCT(hour),
+        p95_ns = PERCENTILE(duration, 95)
+    BY day = BUCKET(@timestamp, 1 day)
+| EVAL availability_pct = ROUND(100.0 * (1 - TO_DOUBLE(errors) / requests), 4),
+       p95_ms = ROUND(p95_ns / 1000000.0, 1)
+| INLINE STATS total_requests = SUM(requests),
+               total_errors = SUM(errors),
+               total_hours_with_data = SUM(hours_with_data),
+               days_with_data = COUNT(*),
+               worst_day_availability_pct = MIN(availability_pct),
+               best_day_availability_pct = MAX(availability_pct)
+| EVAL overall_7d_availability_pct = ROUND(100.0 * (1 - TO_DOUBLE(total_errors) / total_requests), 4)
+| KEEP day, requests, errors, availability_pct, p95_ms, hours_with_data, overall_7d_availability_pct, worst_day_availability_pct, best_day_availability_pct, days_with_data, total_hours_with_data, total_requests, total_errors
+| SORT day DESC
+| LIMIT 8

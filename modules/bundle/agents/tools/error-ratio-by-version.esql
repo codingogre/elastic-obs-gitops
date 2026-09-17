@@ -1,0 +1,15 @@
+FROM traces-*
+| WHERE @timestamp >= NOW() - 30 minutes
+    AND service.name == ?service
+    AND kind == "Server"
+| STATS requests = COUNT(*),
+        errors = COUNT(*) WHERE status.code == "Error",
+        p95_ns = PERCENTILE(duration, 95),
+        first_seen = MIN(@timestamp),
+        last_seen = MAX(@timestamp)
+    BY service.version, deployment.environment
+| EVAL error_ratio = ROUND(TO_DOUBLE(errors) / requests, 5),
+       p95_ms = ROUND(p95_ns / 1000000.0, 1)
+| KEEP service.version, deployment.environment, requests, errors, error_ratio, p95_ms, first_seen, last_seen
+| SORT last_seen DESC
+| LIMIT 20

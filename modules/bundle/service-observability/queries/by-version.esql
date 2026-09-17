@@ -1,0 +1,9 @@
+FROM traces-*
+| WHERE @timestamp >= ?_tstart AND @timestamp <= ?_tend
+    AND service.name == "${service}" AND kind == "Server"
+| STATS requests = COUNT(*), errors = COUNT(*) WHERE status.code == "Error",
+    p95_us = PERCENTILE(transaction.duration.us, 95) BY service.version
+| EVAL error_ratio = ROUND(TO_DOUBLE(errors) / requests, 4), p95_ms = ROUND(p95_us / 1000.0, 1)
+| KEEP service.version, requests, errors, error_ratio, p95_ms
+| SORT service.version DESC
+| LIMIT 20
