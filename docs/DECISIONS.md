@@ -34,3 +34,13 @@ without a shell and maps well-known names to `TF_VAR_*`. CI sets the same variab
 job in the `prod` environment.
 
 **Why.** Prod changes land only through a reviewed CI job, even when the plan shows none.
+
+## ADR-005: demo staging seeds one UI-made dashboard through the API (2026-09-17)
+
+**Decision.** `scripts/seed_ui_dashboard.py` creates the "Grid dispatch triage" dashboard in the dev space through
+the Dashboards API. It is the only script that writes a Kibana object, and it refuses to run outside the dev space
+or once the dashboard is captured into `modules/bundle/bespoke/`.
+
+**Why.** The UI-to-code story starts from a dashboard a person built by hand, and the Kibana UI saves through the
+same API. After each rehearsal the capture is reverted, so the unmanaged starting point has to be put back
+repeatably. Everything Terraform owns still has Git as its only source.
