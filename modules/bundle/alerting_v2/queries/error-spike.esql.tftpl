@@ -1,0 +1,6 @@
+FROM traces-*
+| WHERE service.name == "${service}" AND kind == "Server"
+| STATS requests = COUNT(*), errors = COUNT(CASE(status.code == "Error", 1, null)) BY service = service.name, version = service.version
+| EVAL error_ratio = ROUND(TO_DOUBLE(errors) / requests, 4), environment = "${environment}"
+| WHERE requests >= ${min_requests} AND error_ratio > ${threshold}
+| KEEP service, version, requests, errors, error_ratio, environment

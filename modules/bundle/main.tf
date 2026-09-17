@@ -40,3 +40,22 @@ module "agents" {
   workflow_ids     = module.workflows.workflow_ids
   service_tool_ids = [for s in module.service : s.health_tool_id]
 }
+
+module "alerting_v2" {
+  source = "./alerting_v2"
+  count  = var.settings.alerting_v2_enabled ? 1 : 0
+
+  space_id                = var.space_id
+  settings                = var.settings
+  services                = local.services
+  remediation_workflow_id = module.workflows.workflow_ids.remediate_service
+
+  # Alerting v2 must be switched on (prod) before its rules and policies can be written.
+  depends_on = [module.foundation]
+}
+
+module "bespoke" {
+  source = "./bespoke"
+
+  space_id = var.space_id
+}

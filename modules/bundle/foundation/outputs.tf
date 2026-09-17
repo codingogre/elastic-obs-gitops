@@ -5,3 +5,8 @@ output "gitops_events_data_stream" {
 output "data_view_ids" {
   value = { for k, v in elasticstack_kibana_data_view.this : k => v.data_view.id }
 }
+
+output "global_settings_ready" {
+  description = "Depend on this before creating Alerting v2 objects."
+  value       = [for s in elasticgitops_kibana_setting.alerting_v2 : s.id]
+}

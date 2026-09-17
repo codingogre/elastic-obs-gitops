@@ -80,6 +80,11 @@ def main():
             if env.get(key):
                 env.setdefault(f"TF_VAR_{var}", env[key])
 
+    # A locally built elasticgitops provider (make provider) is used when present; CI builds its own mirror.
+    local_rc = REPO / ".provider-mirror" / "terraformrc"
+    if local_rc.is_file():
+        env.setdefault("TF_CLI_CONFIG_FILE", str(local_rc))
+
     if "--backend" in flags:
         bucket, region = env.get("TF_STATE_BUCKET"), env.get("TF_STATE_REGION")
         if not bucket or not region:

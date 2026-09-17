@@ -69,3 +69,14 @@ capture:
 
 demo-preflight:
 	$(RUN) python3 scripts/preflight_connectors.py --env $(ENV)
+
+# ── elasticgitops provider, built from source into a filesystem mirror (DECISIONS ADR-002) ──
+PROVIDER_SRC ?= ../terraform-provider-elasticgitops
+PROVIDER_VERSION ?= 0.1.0
+GO ?= $(shell test -x /opt/homebrew/bin/go && echo /opt/homebrew/bin/go || echo go)
+
+.PHONY: provider
+provider:
+	cd $(PROVIDER_SRC) && PATH="$(dir $(GO)):$$PATH" ./scripts/build-mirror.sh "$(CURDIR)/.provider-mirror" $(PROVIDER_VERSION)
+	printf 'provider_installation {\n  filesystem_mirror {\n    path    = "%s"\n    include = ["registry.terraform.io/codingogre/elasticgitops"]\n  }\n  direct {\n    exclude = ["registry.terraform.io/codingogre/elasticgitops"]\n  }\n}\n' "$(CURDIR)/.provider-mirror" > .provider-mirror/terraformrc
+	@echo "Built codingogre/elasticgitops $(PROVIDER_VERSION) into .provider-mirror"

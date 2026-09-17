@@ -43,6 +43,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/tf-env
+        with:
+          build-provider: "true"
       - name: init
         run: python3 scripts/with_env.py dev --backend -- terraform -chdir=envs/dev init -input=false
       - name: plan

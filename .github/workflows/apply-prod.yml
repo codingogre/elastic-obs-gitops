@@ -23,6 +23,8 @@ env:
 
 jobs:
   apply:
+    # A merged promotion applies prod once prod is live (repository variable PROD_LIVE=true); on demand it always runs.
+    if: github.event_name == 'workflow_dispatch' || vars.PROD_LIVE == 'true'
     runs-on: ubuntu-latest
     # The prod environment requires an approver and deploys only from main.
     environment: prod
@@ -40,6 +42,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/tf-env
+        with:
+          build-provider: "true"
       - name: init
         run: python3 scripts/with_env.py prod --backend -- terraform -chdir=envs/prod init -input=false
       - name: plan

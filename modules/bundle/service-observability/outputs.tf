@@ -20,3 +20,7 @@ output "burn_rate_rule_ids" {
     latency      = elasticstack_kibana_alerting_rule.latency_burn_rate.rule_id
   }
 }
+
+output "gate_id" {
+  value = elasticgitops_release_gate.this.gate_id
+}
