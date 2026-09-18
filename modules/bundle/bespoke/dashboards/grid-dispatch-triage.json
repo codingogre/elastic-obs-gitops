@@ -1,0 +1,395 @@
+{
+  "id": "7f3c9a52-4e1b-4d8a-9c6e-2b5f8d1a0e47",
+  "data": {
+    "description": "On-call starting point for grid-dispatch: request volume, failures and error ratio.",
+    "panels": [
+      {
+        "config": {
+          "content": "## Grid dispatch triage\nStart here when dispatch errors rise.\n\n1. Is it every route or one?\n2. Did a release just go out?\n3. Is the error ratio above the 2% release objective?",
+          "settings": {
+            "open_links_in_new_tab": true
+          }
+        },
+        "grid": {
+          "h": 8,
+          "w": 16,
+          "x": 0,
+          "y": 0
+        },
+        "id": "triage-notes",
+        "type": "markdown"
+      },
+      {
+        "config": {
+          "data_source": {
+            "query": "FROM traces-* | WHERE @timestamp <= ?_tend AND @timestamp > ?_tstart AND service.name == \"grid-dispatch\" AND kind == \"Server\" AND status.code == \"Error\" | STATS failed = COUNT(*)",
+            "type": "esql"
+          },
+          "metrics": [
+            {
+              "column": "failed",
+              "type": "primary"
+            }
+          ],
+          "title": "Failed requests",
+          "type": "metric"
+        },
+        "grid": {
+          "h": 8,
+          "w": 16,
+          "x": 16,
+          "y": 0
+        },
+        "id": "failed-requests",
+        "type": "vis"
+      },
+      {
+        "config": {
+          "data_source": {
+            "query": "FROM traces-* | WHERE @timestamp <= ?_tend AND @timestamp > ?_tstart AND service.name == \"grid-dispatch\" AND kind == \"Server\" | EVAL failed = CASE(status.code == \"Error\", 1, 0) | STATS error_ratio_pct = ROUND(AVG(failed) * 100, 2)",
+            "type": "esql"
+          },
+          "metrics": [
+            {
+              "column": "error_ratio_pct",
+              "type": "primary"
+            }
+          ],
+          "title": "Error ratio (%)",
+          "type": "metric"
+        },
+        "grid": {
+          "h": 8,
+          "w": 16,
+          "x": 32,
+          "y": 0
+        },
+        "id": "error-ratio",
+        "type": "vis"
+      },
+      {
+        "config": {
+          "axis": {
+            "x": {
+              "domain": {
+                "rounding": false,
+                "type": "fit"
+              },
+              "grid": {
+                "visible": true
+              },
+              "labels": {
+                "orientation": "horizontal"
+              },
+              "scale": "temporal",
+              "ticks": {
+                "visible": true
+              },
+              "title": {
+                "text": "",
+                "visible": true
+              }
+            },
+            "y": {
+              "domain": {
+                "rounding": true,
+                "type": "full"
+              },
+              "grid": {
+                "visible": true
+              },
+              "labels": {
+                "orientation": "horizontal"
+              },
+              "scale": "linear",
+              "ticks": {
+                "visible": true
+              },
+              "title": {
+                "text": "",
+                "visible": true
+              }
+            }
+          },
+          "layers": [
+            {
+              "data_source": {
+                "query": "FROM traces-* | WHERE @timestamp <= ?_tend AND @timestamp > ?_tstart AND service.name == \"grid-dispatch\" AND kind == \"Server\" | STATS requests = COUNT(*) BY bucket = BUCKET(@timestamp, 75, ?_tstart, ?_tend)",
+                "type": "esql"
+              },
+              "ignore_global_filters": false,
+              "sampling": 1,
+              "type": "line",
+              "x": {
+                "column": "bucket"
+              },
+              "y": [
+                {
+                  "axis": "y",
+                  "color": {
+                    "type": "auto"
+                  },
+                  "column": "requests"
+                }
+              ]
+            }
+          ],
+          "legend": {
+            "layout": {
+              "truncate": {
+                "max_lines": 1
+              },
+              "type": "grid"
+            },
+            "placement": "outside",
+            "position": "right",
+            "visibility": "hidden"
+          },
+          "styling": {
+            "interpolation": "linear",
+            "overlays": {
+              "current_time_marker": {
+                "visible": false
+              },
+              "partial_buckets": {
+                "visible": false
+              }
+            },
+            "points": {
+              "visibility": "auto"
+            }
+          },
+          "title": "Requests over time",
+          "type": "xy"
+        },
+        "grid": {
+          "h": 12,
+          "w": 24,
+          "x": 0,
+          "y": 8
+        },
+        "id": "requests-over-time",
+        "type": "vis"
+      },
+      {
+        "config": {
+          "axis": {
+            "x": {
+              "domain": {
+                "rounding": false,
+                "type": "fit"
+              },
+              "grid": {
+                "visible": true
+              },
+              "labels": {
+                "orientation": "horizontal"
+              },
+              "scale": "temporal",
+              "ticks": {
+                "visible": true
+              },
+              "title": {
+                "text": "",
+                "visible": true
+              }
+            },
+            "y": {
+              "domain": {
+                "rounding": true,
+                "type": "full"
+              },
+              "grid": {
+                "visible": true
+              },
+              "labels": {
+                "orientation": "horizontal"
+              },
+              "scale": "linear",
+              "ticks": {
+                "visible": true
+              },
+              "title": {
+                "text": "",
+                "visible": true
+              }
+            }
+          },
+          "layers": [
+            {
+              "data_source": {
+                "query": "FROM traces-* | WHERE @timestamp <= ?_tend AND @timestamp > ?_tstart AND service.name == \"grid-dispatch\" AND kind == \"Server\" AND status.code == \"Error\" | STATS failed = COUNT(*) BY bucket = BUCKET(@timestamp, 75, ?_tstart, ?_tend)",
+                "type": "esql"
+              },
+              "ignore_global_filters": false,
+              "sampling": 1,
+              "type": "line",
+              "x": {
+                "column": "bucket"
+              },
+              "y": [
+                {
+                  "axis": "y",
+                  "color": {
+                    "type": "auto"
+                  },
+                  "column": "failed"
+                }
+              ]
+            }
+          ],
+          "legend": {
+            "layout": {
+              "truncate": {
+                "max_lines": 1
+              },
+              "type": "grid"
+            },
+            "placement": "outside",
+            "position": "right",
+            "visibility": "hidden"
+          },
+          "styling": {
+            "interpolation": "linear",
+            "overlays": {
+              "current_time_marker": {
+                "visible": false
+              },
+              "partial_buckets": {
+                "visible": false
+              }
+            },
+            "points": {
+              "visibility": "auto"
+            }
+          },
+          "title": "Failed requests over time",
+          "type": "xy"
+        },
+        "grid": {
+          "h": 12,
+          "w": 24,
+          "x": 24,
+          "y": 8
+        },
+        "id": "failures-over-time",
+        "type": "vis"
+      },
+      {
+        "config": {
+          "axis": {
+            "x": {
+              "domain": {
+                "rounding": false,
+                "type": "fit"
+              },
+              "grid": {
+                "visible": true
+              },
+              "labels": {
+                "orientation": "horizontal"
+              },
+              "scale": "ordinal",
+              "ticks": {
+                "visible": true
+              },
+              "title": {
+                "text": "",
+                "visible": true
+              }
+            },
+            "y": {
+              "domain": {
+                "rounding": true,
+                "type": "full"
+              },
+              "grid": {
+                "visible": true
+              },
+              "labels": {
+                "orientation": "horizontal"
+              },
+              "scale": "linear",
+              "ticks": {
+                "visible": true
+              },
+              "title": {
+                "text": "",
+                "visible": true
+              }
+            }
+          },
+          "layers": [
+            {
+              "data_source": {
+                "query": "FROM traces-*\n  | WHERE service.name == \"grid-dispatch\" AND kind == \"Server\"\n  | STATS p95_ms = ROUND(PERCENTILE(duration, 95) / 1000000)\n        BY service.version",
+                "type": "esql"
+              },
+              "ignore_global_filters": false,
+              "sampling": 1,
+              "type": "bar_stacked",
+              "x": {
+                "column": "service.version"
+              },
+              "y": [
+                {
+                  "axis": "y",
+                  "color": {
+                    "type": "auto"
+                  },
+                  "column": "p95_ms"
+                }
+              ]
+            }
+          ],
+          "legend": {
+            "layout": {
+              "truncate": {
+                "max_lines": 1
+              },
+              "type": "grid"
+            },
+            "placement": "outside",
+            "position": "right",
+            "visibility": "auto"
+          },
+          "styling": {
+            "bars": {
+              "data_labels": {
+                "visible": false
+              },
+              "minimum_height": 1
+            },
+            "interpolation": "linear",
+            "overlays": {
+              "current_time_marker": {
+                "visible": false
+              },
+              "partial_buckets": {
+                "visible": false
+              }
+            }
+          },
+          "type": "xy"
+        },
+        "grid": {
+          "h": 15,
+          "w": 24,
+          "x": 0,
+          "y": 20
+        },
+        "id": "fe8bef17-3340-4175-b57e-ef6074162585",
+        "type": "vis"
+      }
+    ],
+    "query": {
+      "expression": "",
+      "language": "kql"
+    },
+    "time_range": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "title": "Grid dispatch triage"
+  }
+}
