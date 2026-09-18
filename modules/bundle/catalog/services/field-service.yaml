@@ -1,0 +1,15 @@
+name: field-service
+description: "Schedules and tracks field work orders"
+team: field-operations
+tier: 2
+contact:
+  email: field-ops-oncall@example.com
+runbook_url: https://example.com/runbooks/field-service
+slo:
+  availability_target: 99.99
+  latency_threshold_ms: 500
+  latency_target: 95
+  window: 7d
+release:
+  max_error_ratio: 0.02
+  max_p95_ms: 650
