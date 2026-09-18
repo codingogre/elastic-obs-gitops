@@ -1,6 +1,6 @@
 # Prod pins a released bundle. Only promotion pull requests change this ref.
 module "bundle" {
-  source = "../../modules/bundle" # replaced by the first promotion with git::https://github.com/codingogre/elastic-obs-gitops.git//modules/bundle?ref=obs-vX.Y.Z
+  source = "git::https://github.com/codingogre/elastic-obs-gitops.git//modules/bundle?ref=obs-v0.4.0"
 
   space_id              = var.space_id
   settings              = var.settings
